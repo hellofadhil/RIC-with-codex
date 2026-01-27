@@ -42,6 +42,7 @@ namespace OnePro.API.Repositories
                 Members = members
                     .Select(u => new Members
                     {
+                        Id = u.Id,
                         Name = u.Name,
                         Email = u.Email,
                         Position = u.Position,
@@ -49,6 +50,48 @@ namespace OnePro.API.Repositories
                     })
                     .ToList(),
             };
+        }
+
+        public async Task<Core.Models.Entities.User?> GetUserByIdAsync(Guid userId)
+        {
+            return await _context.Users!.FirstOrDefaultAsync(u => u.Id == userId);
+        }
+
+        public async Task<Core.Models.Entities.User?> GetUserByEmailAsync(string email)
+        {
+            return await _context.Users!.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task<bool> CreateGroupAsync(Core.Models.Entities.Group group)
+        {
+            _context.Groups!.Add(group);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> AddMemberAsync(Core.Models.Entities.User user)
+        {
+            _context.Users!.Add(user);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateMemberRoleAsync(Core.Models.Entities.User user, Core.Models.Enums.Role newRole)
+        {
+            user.Role = newRole;
+            _context.Users!.Update(user);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateMemberAsync(Core.Models.Entities.User user)
+        {
+            _context.Users!.Update(user);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteMemberAsync(Core.Models.Entities.User user)
+        {
+            user.IdGroup = null;
+            _context.Users!.Update(user);
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

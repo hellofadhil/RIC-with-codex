@@ -36,6 +36,13 @@ public class RicController : ControllerBase
         return result;
     }
 
+    private bool TryGetGuidClaim(string key, out Guid result)
+    {
+        result = Guid.Empty;
+        var value = User.FindFirstValue(key);
+        return Guid.TryParse(value, out result) && result != Guid.Empty;
+    }
+
     private string GetStringClaim(string key)
     {
         // exact match (custom claims)
@@ -87,7 +94,8 @@ public class RicController : ControllerBase
     [HttpGet("my")]
     public async Task<IActionResult> GetMyGroupRics([FromQuery] string? q, [FromQuery] int? limit)
     {
-        var groupId = GetGuidClaim("groupId");
+        if (!TryGetGuidClaim("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
         var data = await _repository.GetAllByGroupAsync(groupId, q, limit ?? 10);
         return Ok(data);
     }
@@ -117,10 +125,13 @@ public class RicController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
+        if (!TryGetGuidClaim("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
+
         var ric = new FormRic
         {
             IdUser = GetGuidClaim("id"),
-            IdGroupUser = GetGuidClaim("groupId"),
+            IdGroupUser = groupId,
             Status = req.Status,
 
             BrConfirm = false,
@@ -147,7 +158,8 @@ public class RicController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var groupId = GetGuidClaim("groupId");
+        if (!TryGetGuidClaim("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
         var ric = await _repository.GetByIdAsync(id);
 
         if (ric is null)
@@ -172,7 +184,8 @@ public class RicController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var groupId = GetGuidClaim("groupId");
+        if (!TryGetGuidClaim("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
         var editorId = GetGuidClaim("id");
 
         var ric = await _repository.GetByIdAsync(id);
@@ -435,7 +448,8 @@ public class RicController : ControllerBase
     [HttpGet("approval")]
     public async Task<IActionResult> GetApprovalQueue([FromQuery] string? q, [FromQuery] int? limit)
     {
-        var groupId = GetGuidClaim("groupId");
+        if (!TryGetGuidClaim("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
         var roleStr = GetStringClaim("role");
 
         if (!Enum.TryParse(roleStr, out Role role))

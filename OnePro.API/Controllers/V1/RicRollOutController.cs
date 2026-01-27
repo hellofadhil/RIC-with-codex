@@ -35,6 +35,13 @@ public class RicRollOutController : ControllerBase
         return result;
     }
 
+    private bool TryGetGuid(string key, out Guid result)
+    {
+        result = Guid.Empty;
+        var value = User.FindFirstValue(key);
+        return Guid.TryParse(value, out result) && result != Guid.Empty;
+    }
+
     private string GetString(string key)
     {
         // 1) exact match
@@ -66,7 +73,8 @@ public class RicRollOutController : ControllerBase
     [HttpGet("my")]
     public async Task<IActionResult> GetMyGroupRollOuts()
     {
-        var groupId = GetGuid("groupId");
+        if (!TryGetGuid("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
         return Ok(await _repository.GetAllByGroupAsync(groupId));
     }
 
@@ -109,7 +117,8 @@ public class RicRollOutController : ControllerBase
             return ValidationProblem(ModelState);
 
         var userId = GetGuid("id");
-        var groupId = GetGuid("groupId");
+        if (!TryGetGuid("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
 
         // default Draft kalau client ngirim kosong/invalid
         var action = (req.Action ?? "save").Trim().ToLowerInvariant();
@@ -161,7 +170,8 @@ public class RicRollOutController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var groupId = GetGuid("groupId");
+        if (!TryGetGuid("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
         var editorId = GetGuid("id");
 
         var rollOut = await _repository.GetByIdAsync(id);
@@ -234,7 +244,8 @@ public class RicRollOutController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var groupId = GetGuid("groupId");
+        if (!TryGetGuid("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
         var editorId = GetGuid("id");
 
         var rollOut = await _repository.GetByIdAsync(id);
@@ -279,7 +290,8 @@ public class RicRollOutController : ControllerBase
     [Authorize(Roles = "User_Pic")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var groupId = GetGuid("groupId");
+        if (!TryGetGuid("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
 
         var rollOut = await _repository.GetByIdAsync(id);
         if (rollOut is null)
@@ -304,7 +316,8 @@ public class RicRollOutController : ControllerBase
     [Authorize(Roles = "User_Pic")]
     public async Task<IActionResult> Submit(Guid id)
     {
-        var groupId = GetGuid("groupId");
+        if (!TryGetGuid("groupId", out var groupId))
+            return BadRequest("User does not belong to any group.");
         var editorId = GetGuid("id");
 
         var rollOut = await _repository.GetByIdAsync(id);

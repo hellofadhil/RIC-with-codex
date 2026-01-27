@@ -31,7 +31,7 @@ sqlcmd -S (localdb)\MSSQLLocalDB -Q "DROP DATABASE DatabaseRic"
 
 sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT TOP 10 AsIsProcessRasciFile FROM FormRics"
 
-sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT * FROM FormRicHistories"
+sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT * FROM Groups"
 
 sqlcmd -S (localdb)\MSSQLLocalDB -d DatabaseRic -Q "SELECT FormRicRollOutId FROM FormRicRollOutHistories"
 

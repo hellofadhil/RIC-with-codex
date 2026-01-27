@@ -1,24 +1,55 @@
+@using Core.Models.Enums
+@model OnePro.Front.Models.GroupResponse
+
 @{
     ViewData["Title"] = "Dashboard";
     Layout = "_LayoutDashboard";
+
+    var currentRole = Context.Session.GetString("UserRole") ?? "";
+    var isPic = IsPicRole(currentRole);
+    var roleOptions = GetRoleOptions(currentRole);
 }
-@model OnePro.Front.Models.GroupResponse
 
 <div class="max-w-6xl mx-auto mt-4 bg-white border border-gray-200 shadow-xl rounded-2xl p-6">
 
     <!-- Header -->
     <div class="flex justify-between items-center mb-5">
         <h2 class="text-2xl font-semibold text-gray-800">
-            @Model.NamaDivisi 
-            <span class="text-gray-500">— @Model.NamaPerusahaan</span>
+            @Model.NamaDivisi
+            <span class="text-gray-500">- @Model.NamaPerusahaan</span>
         </h2>
-
-        <!-- Create Button -->
-        <a asp-action="Create" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl 
-            bg-blue-600 hover:bg-blue-700 text-white transition">
-            + Invite
-        </a>
     </div>
+
+    @if (isPic)
+    {
+        <div class="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <form asp-action="Invite" method="post" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                @Html.AntiForgeryToken()
+                <input name="Name"
+                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                       placeholder="Nama" required />
+                <input name="Email"
+                       type="email"
+                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                       placeholder="Email" required />
+                <input name="Position"
+                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                       placeholder="Posisi" />
+                <select name="Role"
+                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    @foreach (var opt in roleOptions)
+                    {
+                        <option value="@opt.Value">@opt.Label</option>
+                    }
+                </select>
+                <button type="submit"
+                        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">
+                    + Add Member
+                </button>
+            </form>
+            <p class="mt-2 text-xs text-gray-500">Jika password tidak diisi, default akan digunakan.</p>
+        </div>
+    }
 
     <!-- Table -->
     <div class="overflow-x-auto">
@@ -29,13 +60,14 @@
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Role</th>
                     <th class="px-4 py-3">Position</th>
-                    <th class="px-4 py-3 text-center w-40">Actions</th>
+                    <th class="px-4 py-3 text-center w-56">Actions</th>
                 </tr>
             </thead>
 
             <tbody class="divide-y divide-gray-200">
                 @foreach (var m in Model.Members)
                 {
+                    var memberIsPic = IsPicRole(m.RoleName);
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-4 py-3 font-medium text-gray-900">@m.Name</td>
                         <td class="px-4 py-3">@m.Email</td>
@@ -45,9 +77,9 @@
                             <span class="px-3 py-1 rounded-full text-xs font-medium
                                 @(m.Role <= 3
                                     ? "bg-blue-100 text-blue-700"
-                                    : m.Role <= 6
+                                    : m.Role <= 7
                                         ? "bg-amber-100 text-amber-700"
-                                        : m.Role <= 9
+                                        : m.Role <= 11
                                             ? "bg-rose-100 text-rose-700"
                                             : "bg-green-100 text-green-700")">
                                 @m.RoleName
@@ -58,21 +90,33 @@
 
                         <!-- Actions -->
                         <td class="px-4 py-3 text-center flex gap-2 justify-center">
+                            @if (isPic)
+                            {
+                                <form asp-action="UpdateRole" asp-route-id="@m.Id" method="post" class="inline-flex gap-2 items-center">
+                                    @Html.AntiForgeryToken()
+                                    <select name="role" class="rounded-lg border border-gray-200 px-2 py-1 text-xs">
+                                        @foreach (var opt in roleOptions)
+                                        {
+                                            <option value="@opt.Value" selected="@(opt.Value == m.Role ? "selected" : null)">@opt.Label</option>
+                                        }
+                                    </select>
+                                    <button type="submit"
+                                            class="px-3 py-1 text-xs rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium transition">
+                                        Save
+                                    </button>
+                                </form>
 
-                            <!-- Edit -->
-                            <a asp-action="Edit" asp-route-id="@m.Id"
-                               class="px-3 py-1 text-xs rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium transition">
-                                Edit
-                            </a>
-
-                            <!-- Delete -->
-                            <form asp-action="Delete" asp-route-id="@m.Id" method="post" onsubmit="return confirm('Are you sure?')" class="inline">
-                                <button type="submit"
-                                        class="px-3 py-1 text-xs rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 font-medium transition">
-                                    Delete
-                                </button>
-                            </form>
-
+                                @if (!memberIsPic)
+                                {
+                                    <form asp-action="Delete" asp-route-id="@m.Id" method="post" onsubmit="return confirm('Are you sure?')" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="px-3 py-1 text-xs rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 font-medium transition">
+                                            Delete
+                                        </button>
+                                    </form>
+                                }
+                            }
                         </td>
                     </tr>
                 }
@@ -80,3 +124,60 @@
         </table>
     </div>
 </div>
+
+@functions {
+    private static bool IsPicRole(string roleName)
+        => !string.IsNullOrWhiteSpace(roleName) && roleName.EndsWith("_Pic", StringComparison.Ordinal);
+
+    private static List<(int Value, string Label)> GetRoleOptions(string currentRole)
+    {
+        if (string.IsNullOrWhiteSpace(currentRole))
+            return new List<(int, string)>();
+
+        if (currentRole.StartsWith("User_", StringComparison.Ordinal))
+        {
+            return new List<(int, string)>
+            {
+                ((int)Role.User_Member, Role.User_Member.ToString()),
+                ((int)Role.User_Pic, Role.User_Pic.ToString()),
+                ((int)Role.User_Manager, Role.User_Manager.ToString()),
+                ((int)Role.User_VP, Role.User_VP.ToString()),
+            };
+        }
+
+        if (currentRole.StartsWith("BR_", StringComparison.Ordinal))
+        {
+            return new List<(int, string)>
+            {
+                ((int)Role.BR_Member, Role.BR_Member.ToString()),
+                ((int)Role.BR_Pic, Role.BR_Pic.ToString()),
+                ((int)Role.BR_Manager, Role.BR_Manager.ToString()),
+                ((int)Role.BR_VP, Role.BR_VP.ToString()),
+            };
+        }
+
+        if (currentRole.StartsWith("SARM_", StringComparison.Ordinal))
+        {
+            return new List<(int, string)>
+            {
+                ((int)Role.SARM_Member, Role.SARM_Member.ToString()),
+                ((int)Role.SARM_Pic, Role.SARM_Pic.ToString()),
+                ((int)Role.SARM_Manager, Role.SARM_Manager.ToString()),
+                ((int)Role.SARM_VP, Role.SARM_VP.ToString()),
+            };
+        }
+
+        if (currentRole.StartsWith("ECS_", StringComparison.Ordinal))
+        {
+            return new List<(int, string)>
+            {
+                ((int)Role.ECS_Member, Role.ECS_Member.ToString()),
+                ((int)Role.ECS_Pic, Role.ECS_Pic.ToString()),
+                ((int)Role.ECS_Manager, Role.ECS_Manager.ToString()),
+                ((int)Role.ECS_VP, Role.ECS_VP.ToString()),
+            };
+        }
+
+        return new List<(int, string)>();
+    }
+}

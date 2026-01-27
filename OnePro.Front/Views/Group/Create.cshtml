@@ -1,0 +1,43 @@
+@{
+    ViewData["Title"] = "Buat Divisi";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="max-w-3xl mx-auto mt-6 bg-white border border-gray-200 shadow-xl rounded-2xl p-6">
+    <h2 class="text-xl font-semibold text-gray-800">Buat Divisi Baru</h2>
+    <p class="text-sm text-gray-500 mt-1">
+        Kamu belum tergabung di divisi. Buat divisi baru dulu supaya bisa akses RIC dan Roll Out.
+    </p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            @ViewBag.Error
+        </div>
+    }
+
+    <form asp-action="Create" method="post" class="mt-5 space-y-4">
+        @Html.AntiForgeryToken()
+
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Nama Divisi</label>
+            <input name="NamaDivisi"
+                   class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                   placeholder="Contoh: Enterprise Data Management" required />
+        </div>
+
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Nama Perusahaan</label>
+            <input name="NamaPerusahaan"
+                   class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                   placeholder="Contoh: PT Pertamina (Persero)" required />
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit"
+                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">
+                Create Divisi
+            </button>
+        </div>
+    </form>
+</div>

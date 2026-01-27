@@ -43,7 +43,7 @@ namespace OnePro.Front.Controllers
             HttpContext.Session.SetString("JwtToken", result.token);
             HttpContext.Session.SetString("UserName", result.user.Name);
             HttpContext.Session.SetString("UserEmail", result.user.Email);
-            HttpContext.Session.SetString("UserRole", result.user.Role.ToString());
+            HttpContext.Session.SetString("UserRole", result.user.RoleName);
 
             return RedirectToAction("Index", "Dashboard");
         }
@@ -64,8 +64,11 @@ namespace OnePro.Front.Controllers
             }
 
             HttpContext.Session.SetString("JwtToken", result.token);
+            HttpContext.Session.SetString("UserName", result.user.Name);
+            HttpContext.Session.SetString("UserEmail", result.user.Email);
+            HttpContext.Session.SetString("UserRole", result.user.RoleName);
 
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction("Index", "Group");
         }
 
         [HttpPost]

@@ -8,7 +8,7 @@ namespace Core.Models.Entities
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public Guid IdGroup { get; set; }
+        public Guid? IdGroup { get; set; }
 
         public string Name { get; set; } = default!;
         public string Email { get; set; } = default!;

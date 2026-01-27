@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Core.Models;
@@ -89,8 +90,10 @@ namespace OnePro.API.Controllers.V1
                 Id = Guid.NewGuid(),
                 Email = model.Email,
                 Name = model.Name,
-                Position = model.Position,
-                IdGroup = model.IdGroup,
+                Position = model.Position ?? "",
+                IdGroup = model.IdGroup.HasValue && model.IdGroup.Value != Guid.Empty
+                    ? model.IdGroup
+                    : null,
                 Role = Role.User_Member,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
             };
@@ -113,8 +116,11 @@ namespace OnePro.API.Controllers.V1
                 new Claim("email", user.Email),
                 new Claim("name", user.Name),
                 new Claim("role", user.Role.ToString()),
-                new Claim("groupId", user.IdGroup.ToString()),
             };
+            if (user.IdGroup.HasValue && user.IdGroup.Value != Guid.Empty)
+            {
+                claims = claims.Append(new Claim("groupId", user.IdGroup.Value.ToString())).ToArray();
+            }
 
             var credentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
