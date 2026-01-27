@@ -1,0 +1,305 @@
+@using Core.RequestModels.RicRollOut
+@model List<RicRollOutListItemResponse>
+
+@{
+    ViewData["Title"] = "RIC RollOut List";
+    Layout = "_LayoutDashboard";
+
+    var total = Model?.Count ?? 0;
+}
+
+<div class="max-w-6xl mx-auto mt-6">
+
+    <!-- HEADER -->
+    <div class="mt-8">
+        <div class="bg-white rounded-2xl border border-gray-200/80 p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-900 tracking-tight">RIC RollOut</h1>
+                    <p class="text-sm text-gray-500 mt-1">Kelola dan pantau pengajuan RollOut aplikasi kamu dengan rapi.</p>
+                </div>
+
+                <a asp-action="Create" class="@BtnPrimary()">
+                    <i class="ri-add-line text-lg"></i>
+                    Create RollOut
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="mt-6 bg-white rounded-2xl border border-gray-200/80 p-5">
+        <div class="flex flex-col md:flex-row md:items-end gap-4">
+
+            <div class="flex-1">
+                <label class="text-xs text-gray-500">Search</label>
+                <div class="relative mt-1">
+                    <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input id="rolloutSearch"
+                           type="text"
+                           placeholder="Cari entitas, judul aplikasi, user, atau ID..."
+                           class="@InputBase("pl-10")" />
+                </div>
+            </div>
+
+            <div class="w-full md:w-56">
+                <label class="text-xs font-medium text-gray-600">Status</label>
+                <div class="relative mt-1">
+                    <i class="ri-filter-3-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+
+                    <select id="statusFilter"
+                            class="w-full appearance-none pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 bg-white text-sm
+                                   focus:outline-none focus:ring-2 focus:ring-gray-900/10 hover:border-gray-300 transition">
+<option value="">All Status</option>
+<option value="@S.Draft">Draft</option>
+<option value="@S.SubmittedToBR">Submitted_To_BR</option>
+<option value="@S.ReviewBR">Review_BR</option>
+<option value="@S.RejectedByBR">Rejected_By_BR</option>
+<option value="@S.SubmittedToBRManager">Submitted_To_BR_Manager</option>
+<option value="@S.ApprovedByBRManager">Approved_By_BR_Manager</option>
+
+                    </select>
+
+                    <i class="ri-arrow-down-s-line absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                </div>
+            </div>
+
+            <button id="clearFilter"
+                    type="button"
+                    class="@BtnGhost()">
+                <i class="ri-refresh-line"></i>
+                Reset
+            </button>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="mt-6 bg-white rounded-2xl border border-gray-200/80 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50/60 text-gray-500 uppercase text-xs">
+                    <tr>
+                        <th class="px-6 py-4 text-left">ID</th>
+                        <th class="px-6 py-4 text-left">Entitas</th>
+                        <th class="px-6 py-4 text-left">Judul Aplikasi</th>
+                        <th class="px-6 py-4 text-left">User PIC</th>
+                        <th class="px-6 py-4 text-left">Status</th>
+                        <th class="px-6 py-4 text-left">Last Update</th>
+                        <th class="px-6 py-4 text-center">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="rolloutTableBody" class="divide-y divide-gray-100">
+                    @if (Model?.Any() == true)
+                    {
+                        foreach (var item in Model)
+                        {
+                            var status = item.Status ?? "";
+                            <tr class="hover:bg-gray-50 transition"
+                                data-status="@status"
+                                data-search="@BuildSearch(item)">
+                                <td class="px-6 py-4 font-mono text-xs text-gray-500">
+                                    <div class="truncate max-w-[7rem]" title="@item.Id">@item.Id</div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-gray-900 leading-snug">
+                                        @Trunc(item.Entitas, 30)
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-gray-900 leading-snug">
+                                        @Trunc(item.JudulAplikasi, 60)
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 text-gray-700">@item.UserName</td>
+
+                                <td class="px-6 py-4">
+                                    <span class="@($"{GetStatusBadgeClass(status)} inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium")">
+                                        @status
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4 text-xs text-gray-500">
+                                    @item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-center gap-1">
+
+                                        <!-- Detail -->
+                                        <a asp-action="Edit" asp-route-id="@item.Id"
+                                           class="@IconBtn()"
+                                           title="Detail / Review">
+                                            <i class="ri-eye-line text-gray-700"></i>
+                                        </a>
+
+                                        <!-- Draft: bisa edit & delete (kalau lu punya endpoint Delete) -->
+                                        @if (status == S.Draft)
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                               title="Edit RollOut"
+                                               class="@IconBtn("hover:bg-yellow-50")">
+                                                <i class="ri-edit-2-line text-yellow-600 text-lg"></i>
+                                            </a>
+
+                                            @* Uncomment kalau controller lu ada Delete *@
+                                            @*
+                                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        title="Delete RollOut"
+                                                        onclick="return confirm('Yakin ingin menghapus RollOut ini?')"
+                                                        class="@IconBtn("hover:bg-red-50")">
+                                                    <i class="ri-delete-bin-line text-red-600 text-lg"></i>
+                                                </button>
+                                            </form>
+                                            *@
+                                        }
+
+                                        <!-- Return ke User: tombol Update -->
+@if (status == S.RejectedByBR)
+{
+    <a asp-action="Update" asp-route-id="@item.Id"
+       class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 hover:bg-yellow-50 transition"
+       title="Update RollOut">
+        <i class="ri-edit-2-line text-yellow-600 text-lg"></i>
+        <span class="text-sm font-medium text-yellow-700">Update</span>
+    </a>
+}
+
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="px-6 py-12 text-center">
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    <div class="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center">
+                                        <i class="ri-inbox-line text-3xl text-gray-300"></i>
+                                    </div>
+                                    <p class="text-gray-700 font-semibold">Belum ada RIC RollOut untuk group kamu.</p>
+                                    <p class="text-gray-500 text-sm">Nanti kalau ada, bakal muncul rapi di sini 😉</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="px-6 py-4 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
+            <span>Gunakan search & filter untuk mempercepat pencarian.</span>
+            <span class="font-medium">
+                Showing <span id="shownCount">@total</span> of @total
+            </span>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+  const searchInput = document.getElementById('rolloutSearch');
+  const statusFilter = document.getElementById('statusFilter');
+  const clearBtn = document.getElementById('clearFilter');
+  const tbody = document.getElementById('rolloutTableBody');
+  const shownCount = document.getElementById('shownCount');
+
+  if (!searchInput || !statusFilter || !clearBtn || !tbody) return;
+
+  const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
+
+  function applyFilter() {
+    const q = (searchInput.value || '').trim().toLowerCase();
+    const s = (statusFilter.value || '').trim();
+
+    let visible = 0;
+
+    rows.forEach(r => {
+      const hay = (r.getAttribute('data-search') || '');
+      const st = (r.getAttribute('data-status') || '');
+      const show = (!q || hay.includes(q)) && (!s || st === s);
+
+      r.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    if (shownCount) shownCount.textContent = visible;
+  }
+
+  searchInput.addEventListener('input', applyFilter);
+  statusFilter.addEventListener('change', applyFilter);
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    statusFilter.value = '';
+    applyFilter();
+  });
+
+  applyFilter();
+})();
+</script>
+}
+
+@functions {
+    // Status constants (string) biar aman meskipun enum RollOut belum lengkap
+private static class S
+{
+    public const string Draft = "Draft";
+    public const string SubmittedToBR = "Submitted_To_BR";
+    public const string ReviewBR = "Review_BR";
+
+    // status baru lu (ini yang bikin user bisa update)
+    public const string RejectedByBR = "Rejected_By_BR";
+
+    // kalau ada lanjutannya
+    public const string SubmittedToBRManager = "Submitted_To_BR_Manager";
+    public const string ApprovedByBRManager = "Approved_By_BR_Manager";
+}
+
+
+    private string Trunc(string? text, int max)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "-";
+        return text.Length > max ? text.Substring(0, max) + "..." : text;
+    }
+
+    private string BuildSearch(RicRollOutListItemResponse item)
+    {
+        var parts = $"{item.Id} {item.Entitas} {item.JudulAplikasi} {item.UserName} {item.Status}";
+        return parts.ToLowerInvariant();
+    }
+
+    private string InputBase(string extra = "")
+        => $"w-full {extra} pr-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900/10 text-sm";
+
+    private string BtnPrimary()
+        => "inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white text-sm font-medium transition";
+
+    private string BtnGhost()
+        => "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition";
+
+    private string IconBtn(string extraHover = "hover:bg-gray-100")
+        => $"w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 {extraHover} transition";
+
+private string GetStatusBadgeClass(string status)
+{
+    return status switch
+    {
+        S.Draft               => "bg-gray-100 text-gray-700 border border-gray-200",
+        S.SubmittedToBR       => "bg-blue-100 text-blue-700 border border-blue-200",
+        S.ReviewBR            => "bg-indigo-100 text-indigo-700 border border-indigo-200",
+        S.RejectedByBR        => "bg-red-100 text-red-700 border border-red-200",
+        S.SubmittedToBRManager=> "bg-amber-100 text-amber-700 border border-amber-200",
+        S.ApprovedByBRManager => "bg-green-100 text-green-700 border border-green-200",
+        _                     => "bg-gray-100 text-gray-600 border border-gray-200"
+    };
+}
+
+}

@@ -1,0 +1,687 @@
+@using System.Text.Encodings.Web
+@using System.Linq
+
+@model OnePro.Front.Models.RicCreateViewModel
+@{
+    ViewBag.Title = "Review & Edit Form RIC New Development & Enhancement";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="min-h-screen bg-slate-50">
+    <div class="max-w-7xl mx-auto px-2 sm:px-2 py-4">
+
+        <form asp-controller="RicReview"
+              asp-action="ReviewForm"
+              method="post"
+              enctype="multipart/form-data">
+
+            @Html.AntiForgeryToken()
+
+            <!-- ID disimpan hidden, bukan di URL -->
+            <input asp-for="Id" type="hidden" />
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- MAIN CONTENT -->
+                <div class="lg:col-span-8 space-y-4">
+
+                    <!-- Judul Permintaan -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Judul Permintaan</h2>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Jelaskan secara singkat dan jelas apa yang mau lo ajukan.
+                            </p>
+                        </div>
+                        <div class="px-6 py-4">
+                            <input asp-for="JudulPermintaan"
+                                   class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                            <span asp-validation-for="JudulPermintaan" class="text-xs text-red-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Hashtag -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Hashtag</h2>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Tambahkan hashtag buat ngelompokkin RIC lo (misal: process, digital, cost-saving).
+                            </p>
+                        </div>
+                        <div class="px-6 py-4 space-y-3">
+                            <div id="hashtag-badges" class="flex flex-wrap gap-2">
+                                @if (Model.Hashtags != null && Model.Hashtags.Any())
+                                {
+                                    var idx = 0;
+                                    foreach (var tag in Model.Hashtags)
+                                    {
+                                        <span class="tag-badge inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100">
+                                            <span>#@tag</span>
+                                            <button type="button"
+                                                    class="tag-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 text-[10px] text-indigo-600"
+                                                    data-tag="@tag">×</button>
+                                            <input type="hidden" name="Hashtags[@idx]" value="@tag" />
+                                        </span>
+                                        idx++;
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-xs text-slate-400 empty-hashtag-placeholder">
+                                        Belum ada hashtag. Tambahin buat ngelompokkin RIC lo.
+                                    </span>
+                                }
+                            </div>
+
+                            <input id="hashtag-input"
+                                   type="text"
+                                   class="block w-full rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                   placeholder="Ketik hashtag lalu Enter (tanpa # juga boleh)" />
+                        </div>
+                    </div>
+
+                    <!-- As-is Process & RASCI -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">As-is Process & RASCI</h2>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Upload dokumen proses saat ini dan RASCI yang berlaku. Kalau gak mau ganti file, kosongin aja.
+                            </p>
+                        </div>
+                        <div class="px-6 py-4 space-y-3">
+                            @if (Model.ExistingAsIsFileUrls != null && Model.ExistingAsIsFileUrls.Any())
+                            {
+                                for (var i = 0; i < Model.ExistingAsIsFileUrls.Count; i++)
+                                {
+                                    <input type="hidden" name="ExistingAsIsFileUrls[@i]" value="@Model.ExistingAsIsFileUrls[i]" />
+                                }
+
+                                <div class="mb-2 text-xs text-slate-600">
+                                    <span class="font-medium">File saat ini:</span>
+                                    <ul class="mt-1 list-disc pl-5 space-y-1">
+                                        @foreach (var url in Model.ExistingAsIsFileUrls)
+                                        {
+                                            <li>
+                                                <a href="@url" target="_blank" class="text-indigo-600 underline">
+                                                    @System.IO.Path.GetFileName(url)
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <p class="mt-1 text-[11px] text-slate-500">
+                                        Kosongkan input file di bawah kalau tidak ingin mengganti.
+                                    </p>
+                                </div>
+                            }
+
+                            <label class="flex flex-col items-start justify-between gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs text-slate-600 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="flex flex-col gap-1">
+                                    <span class="font-medium text-slate-700">Upload file baru (opsional, bisa lebih dari satu)</span>
+                                    <span class="file-name text-[11px] text-slate-500">Belum ada file dipilih</span>
+                                </div>
+                                <input asp-for="AsIsRasciFiles" type="file" class="hidden" multiple />
+                            </label>
+
+                            <span asp-validation-for="AsIsRasciFiles" class="text-xs text-red-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Permasalahan -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Permasalahan</h2>
+                            <p class="mt-1 text-xs text-slate-500">Jelaskan masalah utama yang terjadi di proses saat ini.</p>
+                        </div>
+                        <div class="px-6 py-4">
+                            <textarea asp-for="Permasalahan"
+                                      rows="4"
+                                      class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            <span asp-validation-for="Permasalahan" class="text-xs text-red-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Dampak Masalah -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Dampak Masalah</h2>
+                            <p class="mt-1 text-xs text-slate-500">Ceritain impact konkret ke bisnis, waktu, cost, atau kualitas.</p>
+                        </div>
+                        <div class="px-6 py-4">
+                            <textarea asp-for="DampakMasalah"
+                                      rows="3"
+                                      class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            <span asp-validation-for="DampakMasalah" class="text-xs text-red-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Faktor Penyebab -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Faktor Penyebab Masalah</h2>
+                            <p class="mt-1 text-xs text-slate-500">Jelaskan akar masalahnya, bukan cuma gejala di permukaan.</p>
+                        </div>
+                        <div class="px-6 py-4">
+                            <textarea asp-for="FaktorPenyebab"
+                                      rows="3"
+                                      class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            <span asp-validation-for="FaktorPenyebab" class="text-xs text-red-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Solusi Saat Ini -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Solusi Saat Ini (kalau ada)</h2>
+                            <p class="mt-1 text-xs text-slate-500">Kalau sudah ada workaround / solusi sementara, tulis di sini.</p>
+                        </div>
+                        <div class="px-6 py-4">
+                            <textarea asp-for="SolusiSaatIni"
+                                      rows="3"
+                                      class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            <span asp-validation-for="SolusiSaatIni" class="text-xs text-red-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Alternatif Solusi -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Alternatif Solusi</h2>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Tambahkan beberapa opsi solusi. Satu baris satu solusi, lalu tekan Enter.
+                            </p>
+                        </div>
+                        <div class="px-6 py-4 space-y-3">
+                            <div id="alternatif-badges" class="flex flex-wrap gap-2">
+                                @if (Model.Alternatifs != null && Model.Alternatifs.Any())
+                                {
+                                    var idxAlt = 0;
+                                    foreach (var alt in Model.Alternatifs)
+                                    {
+                                        <span class="alt-badge inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-100">
+                                            <span>@alt</span>
+                                            <button type="button"
+                                                    class="alt-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-600"
+                                                    data-alt="@alt">×</button>
+                                            <input type="hidden" name="Alternatifs[@idxAlt]" value="@alt" />
+                                        </span>
+                                        idxAlt++;
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-xs text-slate-400 empty-alt-placeholder">
+                                        Belum ada alternatif. Tambah minimal satu opsi solusi.
+                                    </span>
+                                }
+                            </div>
+
+                            <textarea id="alternatif-input"
+                                      rows="2"
+                                      class="block w-full rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500"
+                                      placeholder="Ketik alternatif solusi, lalu Enter. Bisa beberapa baris."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- To-Be Process / Business RASCI / KKI -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">To-Be Process / Business RASCI / KKI</h2>
+                            <p class="mt-1 text-xs text-slate-500">Upload desain proses target atau dokumen pendukung lainnya.</p>
+                        </div>
+                        <div class="px-6 py-4 space-y-3">
+                            @if (Model.ExistingToBeFileUrls != null && Model.ExistingToBeFileUrls.Any())
+                            {
+                                for (var i = 0; i < Model.ExistingToBeFileUrls.Count; i++)
+                                {
+                                    <input type="hidden" name="ExistingToBeFileUrls[@i]" value="@Model.ExistingToBeFileUrls[i]" />
+                                }
+                                <div class="mb-2 text-xs text-slate-600">
+                                    <span class="font-medium">File saat ini:</span>
+                                    <ul class="mt-1 list-disc pl-5 space-y-1">
+                                        @foreach (var url in Model.ExistingToBeFileUrls)
+                                        {
+                                            <li>
+                                                <a href="@url" target="_blank" class="text-indigo-600 underline">
+                                                    @System.IO.Path.GetFileName(url)
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <p class="mt-1 text-[11px] text-slate-500">
+                                        Kosongkan input file di bawah kalau tidak ingin mengganti.
+                                    </p>
+                                </div>
+                            }
+
+                            <label class="flex flex-col items-start justify-between gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs text-slate-600 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="flex flex-col gap-1">
+                                    <span class="font-medium text-slate-700">Upload file baru (opsional, bisa lebih dari satu)</span>
+                                    <span class="file-name text-[11px] text-slate-500">Belum ada file dipilih</span>
+                                </div>
+                                <input asp-for="ToBeProcessFiles" type="file" class="hidden" multiple />
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Expected Completion Target -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Expected Completion Target</h2>
+                            <p class="mt-1 text-xs text-slate-500">Upload timeline / target penyelesaian kalau ada.</p>
+                        </div>
+                        <div class="px-6 py-4 space-y-3">
+                            @if (Model.ExistingExpectedCompletionFileUrls != null && Model.ExistingExpectedCompletionFileUrls.Any())
+                            {
+                                    for (var i = 0; i < Model.ExistingExpectedCompletionFileUrls.Count; i++)
+                                    {
+                                        <input type="hidden" name="ExistingExpectedCompletionFileUrls[@i]" value="@Model.ExistingExpectedCompletionFileUrls[i]" />
+                                    }
+                                <div class="mb-2 text-xs text-slate-600">
+                                    <span class="font-medium">File saat ini:</span>
+                                    <ul class="mt-1 list-disc pl-5 space-y-1">
+                                        @foreach (var url in Model.ExistingExpectedCompletionFileUrls)
+                                        {
+                                            <li>
+                                                <a href="@url" target="_blank" class="text-indigo-600 underline">
+                                                    @System.IO.Path.GetFileName(url)
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <p class="mt-1 text-[11px] text-slate-500">
+                                        Kosongkan input file di bawah kalau tidak ingin mengganti.
+                                    </p>
+                                </div>
+                            }
+
+                            <label class="flex flex-col items-start justify-between gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs text-slate-600 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="flex flex-col gap-1">
+                                    <span class="font-medium text-slate-700">Upload file baru (opsional, bisa lebih dari satu)</span>
+                                    <span class="file-name text-[11px] text-slate-500">Belum ada file dipilih</span>
+                                </div>
+                                <input asp-for="ExpectedCompletionFiles" type="file" class="hidden" multiple />
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Potensi Value Creation -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Potensi Value Creation</h2>
+                            <p class="mt-1 text-xs text-slate-500">Jelaskan potensi manfaat (efisiensi, cost saving, risk reduction, dll).</p>
+                        </div>
+                        <div class="px-6 py-4">
+                            <textarea asp-for="PotentialValue"
+                                      rows="3"
+                                      class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            <span asp-validation-for="PotentialValue" class="text-xs text-red-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Hasil Setelah Perbaikan -->
+                    <div class="mb-4 rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Hasil Setelah Perbaikan</h2>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Bisa diupdate setelah implementasi. Untuk sekarang boleh dikosongin kalau belum ada hasil.
+                            </p>
+                        </div>
+                        <div class="px-6 py-4">
+                            <textarea asp-for="HasilSetelahPerbaikan"
+                                      rows="3"
+                                      class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            <span asp-validation-for="HasilSetelahPerbaikan" class="text-xs text-red-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Footer tombol (sesuai style) -->
+                    <div class="flex flex-col gap-4 border-t border-slate-100 bg-white px-8 py-4 sm:flex-row sm:items-center sm:justify-between rounded-xl">
+                        <a asp-action="ReviewIndex"
+                           class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-[11px]">
+                                ←
+                            </span>
+                            Kembali
+                        </a>
+
+                        <div class="flex items-center gap-3">
+                            <button type="button"
+                                    id="btn-reject-toggle"
+                                    class="inline-flex items-center justify-center rounded-lg border border-red-500 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50 transition-colors">
+                                Reject
+                            </button>
+
+                            <button type="submit" name="action" value="approve"
+                                    class="inline-flex items-center justify-center rounded-lg border border-emerald-600 bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:ring-offset-1 focus:ring-offset-slate-50 transition-all">
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PANEL REJECT -->
+                    <div id="reject-panel" class="hidden rounded-xl border border-red-100 bg-red-50 px-8 py-4">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="flex-1">
+                                <label for="RejectNote" class="block text-xs font-semibold text-red-700 mb-1">
+                                    Catatan Penolakan
+                                </label>
+                                <p class="text-[11px] text-red-600 mb-1">
+                                    Jelaskan kenapa RIC direject dan apa yang harus diperbaiki user.
+                                </p>
+                                <textarea id="RejectNote"
+                                          name="Note"
+                                          rows="3"
+                                          class="block w-full rounded-lg border border-red-300 px-3 py-2 text-sm focus:border-red-500 focus:ring-red-500 bg-white"></textarea>
+                            </div>
+
+                            <div class="flex flex-col gap-2 mt-3 sm:mt-0 sm:w-40">
+                                <button type="button"
+                                        id="btn-reject-cancel"
+                                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                        name="action"
+                                        value="reject"
+                                        class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-700">
+                                    Submit Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- END MAIN CONTENT -->
+
+                <!-- RIGHT SIDEBAR -->
+                <aside class="lg:col-span-4 space-y-4 lg:sticky lg:top-6 h-fit">
+
+                    <!-- Reviews -->
+                    <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Reviews</h2>
+                            <p class="mt-1 text-xs text-slate-500">Catatan reviewer untuk RIC ini.</p>
+                        </div>
+
+                        <div class="px-6 py-4">
+                            @if (Model.Reviews != null && Model.Reviews.Any())
+                            {
+                                <div class="space-y-3">
+                                    @foreach (var rv in Model.Reviews.OrderByDescending(x => x.CreatedAt))
+                                    {
+                                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="text-sm font-semibold text-slate-800">
+                                                            @(string.IsNullOrWhiteSpace(rv.UserName) ? "Reviewer" : rv.UserName)
+                                                        </span>
+
+                                                        <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 border border-indigo-100">
+                                                            @rv.RoleReview
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="shrink-0 text-right text-[11px] text-slate-500">
+                                                    @rv.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                                                </div>
+                                            </div>
+
+                                            <p class="mt-3 text-sm text-slate-700  w-full">
+                                                @(string.IsNullOrWhiteSpace(rv.Catatan) ? "-" : rv.Catatan)
+                                            </p>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                                    Belum ada review untuk RIC ini.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- History -->
+                    <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">History</h2>
+                            <p class="mt-1 text-xs text-slate-500">Riwayat perubahan RIC (ringkas).</p>
+                        </div>
+
+                        <div class="px-6 py-4">
+                            @if (Model.Histories != null && Model.Histories.Any())
+                            {
+                                <ul class="space-y-2">
+                                    @foreach (var h in Model.Histories.OrderByDescending(x => x.CreatedAt))
+                                    {
+                                        <li class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <div class="text-sm font-semibold text-slate-800">
+                                                        Version @h.Version
+                                                    </div>
+                                                    <div class="mt-0.5 text-xs text-slate-600">
+                                                        @(string.IsNullOrWhiteSpace(h.EditorName) ? "Unknown" : h.EditorName)
+                                                    </div>
+                                                </div>
+
+                                                <div class="shrink-0 text-right text-[11px] text-slate-500">
+                                                    @h.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                                                </div>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                                    Belum ada history untuk RIC ini.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                </aside>
+                <!-- END SIDEBAR -->
+
+            </div> <!-- end grid -->
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // ===== Reject toggle (clean + aman) =====
+        (function () {
+            const toggleBtn = document.getElementById('btn-reject-toggle');
+            const panel = document.getElementById('reject-panel');
+            const cancelBtn = document.getElementById('btn-reject-cancel');
+            const noteInput = document.getElementById('RejectNote');
+            const form = document.querySelector('form');
+
+            if (!toggleBtn || !panel || !form) return;
+
+            toggleBtn.addEventListener('click', () => {
+                panel.classList.remove('hidden');
+                toggleBtn.classList.add('hidden');
+                noteInput?.focus();
+            });
+
+            cancelBtn?.addEventListener('click', () => {
+                panel.classList.add('hidden');
+                toggleBtn.classList.remove('hidden');
+                if (noteInput) noteInput.value = '';
+            });
+
+            // Validasi wajib note untuk reject
+            form.querySelectorAll('button[name="action"]').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    form.dataset.clickedAction = this.value;
+                });
+            });
+
+            form.addEventListener('submit', function (e) {
+                if (form.dataset.clickedAction === 'reject') {
+                    const val = (noteInput?.value || '').trim();
+                    if (!val) {
+                        e.preventDefault();
+                        alert('Catatan penolakan wajib diisi.');
+                        noteInput?.focus();
+                    }
+                }
+            });
+        })();
+
+        // ===== HASHTAG =====
+        (function () {
+            const badgesContainer = document.getElementById('hashtag-badges');
+            const input = document.getElementById('hashtag-input');
+            if (!badgesContainer || !input) return;
+
+            function reindexHiddenInputs() {
+                badgesContainer.querySelectorAll('input[type="hidden"]').forEach((inp, idx) => {
+                    inp.name = 'Hashtags[' + idx + ']';
+                });
+            }
+
+            function ensurePlaceholder() {
+                const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
+                if (hiddenInputs.length === 0 && !badgesContainer.querySelector('.empty-hashtag-placeholder')) {
+                    const span = document.createElement('span');
+                    span.className = 'text-xs text-slate-400 empty-hashtag-placeholder';
+                    span.textContent = 'Belum ada hashtag. Tambahin buat ngelompokkin RIC lo.';
+                    badgesContainer.appendChild(span);
+                }
+            }
+
+            function createTagBadge(tag) {
+                tag = tag.trim().replace(/^#+/, '');
+                if (!tag) return;
+
+                const exists = badgesContainer.querySelector('input[type="hidden"][value="' + tag + '"]');
+                if (exists) return;
+
+                badgesContainer.querySelector('.empty-hashtag-placeholder')?.remove();
+
+                const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
+
+                const span = document.createElement('span');
+                span.className = 'tag-badge inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100';
+                span.innerHTML =
+                    '<span>#' + tag + '</span>' +
+                    '<button type="button" class="tag-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 text-[10px] text-indigo-600" data-tag="' + tag + '">×</button>' +
+                    '<input type="hidden" name="Hashtags[' + index + ']" value="' + tag + '" />';
+
+                badgesContainer.appendChild(span);
+            }
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (input.value.trim()) {
+                        createTagBadge(input.value);
+                        input.value = '';
+                    }
+                }
+            });
+
+            badgesContainer.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target && target.classList.contains('tag-remove')) {
+                    target.closest('.tag-badge')?.remove();
+                    reindexHiddenInputs();
+                    ensurePlaceholder();
+                }
+            });
+
+            ensurePlaceholder();
+        })();
+
+        // ===== ALTERNATIF SOLUSI =====
+        (function () {
+            const badgesContainer = document.getElementById('alternatif-badges');
+            const input = document.getElementById('alternatif-input');
+            if (!badgesContainer || !input) return;
+
+            function reindexHiddenInputs() {
+                badgesContainer.querySelectorAll('input[type="hidden"]').forEach((inp, idx) => {
+                    inp.name = 'Alternatifs[' + idx + ']';
+                });
+            }
+
+            function ensurePlaceholder() {
+                const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
+                if (hiddenInputs.length === 0 && !badgesContainer.querySelector('.empty-alt-placeholder')) {
+                    const span = document.createElement('span');
+                    span.className = 'text-xs text-slate-400 empty-alt-placeholder';
+                    span.textContent = 'Belum ada alternatif. Tambah minimal satu opsi solusi.';
+                    badgesContainer.appendChild(span);
+                }
+            }
+
+            function createAltBadge(text) {
+                text = text.trim();
+                if (!text) return;
+
+                badgesContainer.querySelector('.empty-alt-placeholder')?.remove();
+
+                const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
+
+                const span = document.createElement('span');
+                span.className = 'alt-badge inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-100';
+                span.innerHTML =
+                    '<span>' + text + '</span>' +
+                    '<button type="button" class="alt-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-600" data-alt="' + text + '">×</button>' +
+                    '<input type="hidden" name="Alternatifs[' + index + ']" value="' + text + '" />';
+
+                badgesContainer.appendChild(span);
+            }
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const lines = input.value.split('\n').map(x => x.trim()).filter(Boolean);
+                    lines.forEach(createAltBadge);
+                    input.value = '';
+                }
+            });
+
+            badgesContainer.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target && target.classList.contains('alt-remove')) {
+                    target.closest('.alt-badge')?.remove();
+                    reindexHiddenInputs();
+                    ensurePlaceholder();
+                }
+            });
+
+            ensurePlaceholder();
+        })();
+
+        // ===== File name preview (multiple label support) =====
+        document.addEventListener("change", function (e) {
+            if (!(e.target instanceof HTMLInputElement)) return;
+            if (e.target.type !== "file") return;
+
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+
+            const label = e.target.closest("label");
+            if (!label) return;
+
+            const nameEl = label.querySelector(".file-name");
+            if (!nameEl) return;
+
+            nameEl.textContent = (files.length === 1)
+                ? files[0].name
+                : files.length + " file dipilih";
+        });
+    </script>
+}

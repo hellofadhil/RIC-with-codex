@@ -1,0 +1,267 @@
+using Core.Models.Enums;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using OnePro.Front.Helpers;
+using OnePro.Front.Mappers;
+using OnePro.Front.Middleware;
+using OnePro.Front.Models;
+using OnePro.Front.Services.Interfaces;
+
+namespace OnePro.Front.Controllers
+{
+    [AuthRequired]
+    public class RicController : Controller
+    {
+        private readonly IRicService _ricService;
+        private readonly ILogger<RicController> _logger;
+        private readonly IWebHostEnvironment _env;
+
+        public RicController(
+            IRicService ricService,
+            ILogger<RicController> logger,
+            IWebHostEnvironment env
+        )
+        {
+            _ricService = ricService;
+            _logger = logger;
+            _env = env;
+        }
+
+        #region User Views
+
+        [RoleRequired(0, 1, 2, 3)]
+        [HttpGet("ric/user")]
+        public async Task<IActionResult> UserIndex()
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            var rics = await _ricService.GetMyRicsAsync(token);
+            return View("~/Views/Ric/User/Index.cshtml", rics);
+        }
+
+        [HttpGet("ric/br/review")]
+        public async Task<IActionResult> ReviewIndex()
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            var userRole = HttpContext.Session.GetString("UserRole"); // "0","1","4",...
+            _logger.LogInformation(
+                "ReviewIndex accessed. UserRole from session: {UserRole}",
+                userRole
+            );
+
+            ViewBag.UserRole = userRole;
+
+            var rics = await _ricService.GetMyRicsAsync(token);
+            return View("~/Views/Ric/Review/Index.cshtml", rics);
+        }
+
+        [RoleRequired(1, 4)]
+        [HttpGet("ric/user/create")]
+        public IActionResult Create()
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            return View("~/Views/Ric/User/Create.cshtml", new RicCreateViewModel());
+        }
+
+        [HttpPost("ric/user/create")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(RicCreateViewModel model, string action)
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            if (!ModelState.IsValid)
+                return View("~/Views/Ric/User/Create.cshtml", model);
+
+            try
+            {
+                var dto = await RicMapper.MapToCreateRequestAsync(
+                    model,
+                    action,
+                    files => FileStorageHelper.SaveRicFilesAsync(files, _env.WebRootPath, _logger)
+                );
+
+                await _ricService.CreateRicAsync(dto, token);
+
+                TempData["SuccessMessage"] = "RIC berhasil dibuat!";
+                return RedirectToAction(nameof(UserIndex));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating RIC");
+                ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat membuat RIC.");
+                return View("~/Views/Ric/User/Create.cshtml", model);
+            }
+        }
+
+        [HttpGet("ric/user/edit/{id:guid}")]
+        public async Task<IActionResult> Edit(Guid id)
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            var ric = await _ricService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            if ((StatusRic)ric.Status != StatusRic.Draft)
+            {
+                TempData["ErrorMessage"] = "RIC hanya bisa diedit kalau status masih Draft.";
+                return RedirectToAction(nameof(UserIndex));
+            }
+
+            var vm = RicMapper.MapToEditViewModel(ric);
+            ModelState.Clear();
+
+            return View("~/Views/Ric/User/Edit.cshtml", vm);
+        }
+
+        [HttpPost("ric/user/edit/{id:guid}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(Guid id, RicCreateViewModel model, string action)
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            if (!ModelState.IsValid)
+                return View("~/Views/Ric/User/Edit.cshtml", model);
+
+            var existing = await _ricService.GetRicByIdAsync(id, token);
+            if (existing == null)
+                return NotFound();
+
+            if ((StatusRic)existing.Status != StatusRic.Draft)
+            {
+                TempData["ErrorMessage"] = "RIC hanya bisa diedit kalau status masih Draft.";
+                return RedirectToAction(nameof(UserIndex));
+            }
+
+            try
+            {
+                var dto = await RicMapper.MapToUpdateRequestAsync(
+                    id,
+                    model,
+                    action,
+                    existing,
+                    files => FileStorageHelper.SaveRicFilesAsync(files, _env.WebRootPath, _logger)
+                );
+
+                await _ricService.UpdateRicAsync(id, dto, token);
+
+                TempData["SuccessMessage"] = "RIC berhasil diperbarui!";
+                return RedirectToAction(nameof(UserIndex));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating RIC {Id}", id);
+                ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat update RIC.");
+                return View("~/Views/Ric/User/Edit.cshtml", model);
+            }
+        }
+
+        #endregion
+
+        #region Review Views (BR/SARM/ECS)
+
+        // GET: buka form review & edit (id di query sekali saja)
+        [RoleRequired(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)]
+        [HttpGet("ric/review")]
+        public async Task<IActionResult> ReviewEdit(Guid id)
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            var ric = await _ricService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            var vm = RicMapper.MapToEditViewModel(ric);
+            vm.Id = ric.Id;
+
+            return View("~/Views/Ric/Review/Form.cshtml", vm);
+        }
+
+        // POST: proses Reject / Approve; id dari hidden, bukan dari URL
+        [RoleRequired(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)]
+        [HttpPost("ric/review")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReviewForm(RicCreateViewModel model, string action)
+        {
+            var token = GetAuthToken();
+            if (string.IsNullOrEmpty(token))
+                return RedirectToLogin();
+
+            if (!ModelState.IsValid)
+                return View("~/Views/Ric/Review/Form.cshtml", model);
+
+            try
+            {
+                // update isi RIC kalau BR diperbolehkan edit
+                var existing = await _ricService.GetRicByIdAsync(model.Id, token);
+                if (existing == null)
+                    return NotFound();
+
+                var dto = await RicMapper.MapToUpdateRequestAsync(
+                    model.Id,
+                    model,
+                    action,
+                    existing,
+                    files => FileStorageHelper.SaveRicFilesAsync(files, _env.WebRootPath, _logger)
+                );
+
+                await _ricService.UpdateRicAsync(model.Id, dto, token);
+
+                // trigger status+history di backend lewat ReviewRicAsync
+                var reviewDto = new RicReviewRequest
+                {
+                    Action = action == "reject" ? "Reject" : "Approve",
+                    Note = null // nanti bisa tambahin field catatan kalau mau
+                };
+
+                await _ricService.ReviewRicAsync(model.Id, reviewDto, token);
+
+                TempData["SuccessMessage"] = action == "reject"
+                    ? "RIC berhasil direject dan dikembalikan ke user."
+                    : "RIC disetujui dan data terakhir sudah disimpan.";
+
+                return RedirectToAction(nameof(ReviewIndex));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error review RIC {Id}", model.Id);
+                ModelState.AddModelError(string.Empty, "Terjadi kesalahan saat memproses review RIC.");
+                return View("~/Views/Ric/Review/Form.cshtml", model);
+            }
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        private string? GetAuthToken()
+        {
+            return HttpContext.Session.GetString("JwtToken");
+        }
+
+        private IActionResult RedirectToLogin()
+        {
+            return RedirectToAction("Login", "Auth");
+        }
+
+        #endregion
+    }
+}

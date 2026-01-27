@@ -1,0 +1,304 @@
+@{
+    Layout = null;
+
+    // ===== Session =====
+    var userRole = Context.Session.GetString("UserRole") ?? "";
+    var name = Context.Session.GetString("UserName") ?? "User";
+    var email = Context.Session.GetString("UserEmail") ?? "";
+
+    var initials = name.Length > 1
+        ? $"{char.ToUpper(name[0])}{char.ToUpper(name[1])}"
+        : $"{char.ToUpper(name[0])}";
+
+    // ===== Path helpers =====
+    var path = (Context.Request.Path.Value ?? "").ToLowerInvariant();
+
+    bool IsExact(string p) => path == p;
+    bool IsUnder(string root) => path == root || path.StartsWith(root + "/");
+
+    bool isDashboard = IsExact("/") || IsExact("/dashboard");
+
+    // RIC
+    bool isRicGroup = IsUnder("/ric");
+    bool isRicDashboard = IsUnder("/ric/dashboard") || IsUnder("/ric/user") || IsUnder("/ric/review") || IsExact("/ric");
+    bool isRicApproval = IsUnder("/ric/approval");
+
+    // RIC Roll Out
+    bool isRollGroup = IsUnder("/ricrollout");
+    bool isRollDashboard = IsUnder("/ricrollout/dashboard") || IsUnder("/ricrollout/user") || IsUnder("/ricrollout/review") || IsExact("/ricrollout");
+    bool isRollApproval = IsUnder("/ricrollout/approval");
+
+    bool isUser = IsUnder("/user");
+    bool isSettings = IsUnder("/settings");
+
+    bool isMakerRole = userRole is "0" or "1" or "2" or "3"; // user/pic roles (sesuai rule lo)
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - OnePro</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        :root{
+            --red: 220 38 38;
+            --red-soft: 254 226 226;
+            --text: 51 65 85;
+            --text-strong: 15 23 42;
+            --muted: 241 245 249;
+        }
+
+        .nav-item{
+            display:flex; align-items:center; gap:.65rem;
+            padding:.6rem .9rem;
+            border-radius:1rem;
+            font-size:.9rem;
+            color: rgb(var(--text));
+            transition:.18s ease;
+            position:relative;
+            width:100%;
+        }
+        .nav-item:hover{ background: rgb(var(--muted)); color: rgb(var(--text-strong)); }
+        .nav-item.active{ background: rgb(var(--red-soft)); color: rgb(var(--red)); font-weight:700; }
+        .nav-item.active::before{
+            content:""; position:absolute; left:-10px; top:50%;
+            transform:translateY(-50%); width:4px; height:26px;
+            border-radius:999px; background: rgb(var(--red));
+        }
+
+        .sub-item{
+            display:flex; align-items:center; gap:.5rem;
+            padding:.5rem .9rem .5rem 2.6rem;
+            border-radius:.85rem;
+            font-size:.85rem;
+            color: rgb(100 116 139);
+            transition:.18s ease;
+        }
+        .sub-item:hover{ background: rgb(var(--muted)); color: rgb(var(--text-strong)); }
+        .sub-item.active{ background: rgb(var(--red-soft)); color: rgb(var(--red)); font-weight:600; }
+
+        .btn-reset{ background:transparent; border:none; text-align:left; cursor:pointer; }
+
+        /* Smooth dropdown */
+        .dropdown-panel{
+            overflow:hidden;
+            max-height:0;
+            opacity:0;
+            transform: translateY(-4px);
+            pointer-events:none;
+            transition:
+                max-height 320ms cubic-bezier(.2,.8,.2,1),
+                opacity 220ms ease,
+                transform 220ms ease;
+            will-change: max-height, opacity, transform;
+        }
+        .dropdown-panel.open{
+            opacity:1;
+            transform: translateY(0);
+            pointer-events:auto;
+        }
+        .dropdown-inner{ padding-top:.25rem; }
+
+        .chev{ margin-left:auto; transition: transform 220ms ease; font-size:1.1rem; }
+        .chev.rotate{ transform: rotate(180deg); }
+
+        .nav-item.open-only{
+    background: transparent;
+    color: rgb(var(--text));
+    font-weight: 500;
+}
+
+    </style>
+</head>
+
+<body class="bg-slate-50">
+
+<header class="sticky top-0 z-50 h-14 bg-white border-b flex items-center justify-between px-4">
+    <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="lg:hidden text-xl">
+            <i class="ri-menu-line"></i>
+        </button>
+        <img src="https://akiradata.co.id/wp-content/uploads/2020/05/logo-pertamina.png" class="h-10 w-auto" />
+    </div>
+
+    <div class="relative">
+        <button onclick="toggleProfileMenu()" class="flex items-center gap-2 bg-slate-100 px-2 py-1 rounded-full">
+            <div class="h-9 w-9 rounded-full bg-red-700 text-white text-sm font-semibold flex items-center justify-center">
+                @initials
+            </div>
+            <i id="caretIcon" class="ri-arrow-down-s-line transition"></i>
+        </button>
+
+        <div id="profileMenu" class="hidden absolute right-0 mt-2 w-52 bg-white border rounded-xl shadow-lg">
+            <div class="px-4 py-3 border-b">
+                <div class="font-semibold">@name</div>
+                <div class="text-xs text-slate-400">@email</div>
+            </div>
+
+            <a href="/Profile" class="block px-4 py-2 text-sm hover:bg-slate-100">My Profile</a>
+            <a href="/Settings" class="block px-4 py-2 text-sm hover:bg-slate-100">Settings</a>
+
+            <form method="post" action="@Url.Action("Logout","Auth")">
+                @Html.AntiForgeryToken()
+                <button class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<aside id="sidebar"
+       class="fixed inset-y-0 left-0 z-40 w-48 bg-white border-r shadow-sm
+              transform -translate-x-full lg:translate-x-0 transition">
+
+
+    <div class="p-2 border-b">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-red-600 text-white flex items-center justify-center">
+                <i class="ri-flashlight-line"></i>
+            </div>
+        </div>
+    </div>
+
+    <nav class="px-3 py-4 space-y-2">
+
+        <a href="/Dashboard" class="nav-item @(isDashboard ? "active" : "")">
+            <i class="ri-dashboard-line"></i> Dashboard
+        </a>
+
+        <!-- RIC Dropdown -->
+        <button type="button"
+class="nav-item btn-reset @(isRicGroup ? "active" : "open-only")"
+                data-dd="ric"
+                data-default="@(isRicGroup ? "true" : "false")">
+            <i class="ri-file-list-3-line"></i> RIC
+            <i class="ri-arrow-down-s-line chev"></i>
+        </button>
+
+        <div class="dropdown-panel" data-panel="ric">
+            <div class="dropdown-inner space-y-1">
+                <a href="@(isMakerRole ? "/Ric/User" : "/Ric/Review")"
+                   class="sub-item @(isRicDashboard ? "active" : "")">
+                    <i class="ri-bar-chart-line"></i> Dashboard RIC
+                </a>
+
+                <a href="/Ric/Approval" class="sub-item @(isRicApproval ? "active" : "")">
+                    <i class="ri-check-double-line"></i> Approval
+                </a>
+            </div>
+        </div>
+
+        <!-- Roll Out Dropdown -->
+        <button type="button"
+                class="nav-item btn-reset @(isRollGroup ? "active" : "")"
+                data-dd="roll"
+                data-default="@(isRollGroup ? "true" : "false")">
+            <i class="ri-rocket-line"></i> RIC Roll Out
+            <i class="ri-arrow-down-s-line chev"></i>
+        </button>
+
+        <div class="dropdown-panel" data-panel="roll">
+            <div class="dropdown-inner space-y-1">
+                <a href="@(isMakerRole ? "/RicRollOut/User" : "/RicRollOut/Review")"
+                   class="sub-item @(isRollDashboard ? "active" : "")">
+                    <i class="ri-bar-chart-line"></i> Dashboard Roll Out
+                </a>
+
+                <a href="/RicRollOut/Approval" class="sub-item @(isRollApproval ? "active" : "")">
+                    <i class="ri-check-double-line"></i> Approval Roll Out
+                </a>
+            </div>
+        </div>
+
+        <a href="/User" class="nav-item @(isUser ? "active" : "")">
+            <i class="ri-group-line"></i> Group
+        </a>
+
+        <a href="/Settings" class="nav-item @(isSettings ? "active" : "")">
+            <i class="ri-settings-3-line"></i> Settings
+        </a>
+
+        <form method="post" action="@Url.Action("Logout","Auth")" class="pt-4 border-t">
+            @Html.AntiForgeryToken()
+            <button class="nav-item text-red-600 w-full text-left hover:bg-red-50">
+                <i class="ri-logout-box-line"></i> Logout
+            </button>
+        </form>
+
+    </nav>
+</aside>
+
+<div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/30 z-30 hidden lg:hidden"></div>
+
+<main class="lg:ml-48 p-6">
+    @RenderBody()
+</main>
+
+@RenderSection("Scripts", required: false)
+
+<script>
+    // ===== Sidebar & Profile =====
+    function toggleSidebar(){
+        sidebar.classList.toggle("-translate-x-full");
+        sidebarOverlay.classList.toggle("hidden");
+    }
+    function toggleProfileMenu(){
+        profileMenu.classList.toggle("hidden");
+        caretIcon.classList.toggle("rotate");
+    }
+
+    // ===== Dropdown (smooth + persist) =====
+    const setOpen = (panel, chev, open) => {
+        if (!panel) return;
+
+        if (open) {
+            panel.classList.add("open");
+            panel.style.maxHeight = panel.scrollHeight + "px";
+            chev?.classList.add("rotate");
+        } else {
+            panel.style.maxHeight = panel.scrollHeight + "px";
+            requestAnimationFrame(() => {
+                panel.style.maxHeight = "0px";
+                panel.classList.remove("open");
+                chev?.classList.remove("rotate");
+            });
+        }
+    };
+
+    const initDropdown = (key, defaultOpen) => {
+        const btn = document.querySelector(`[data-dd="${key}"]`);
+        const panel = document.querySelector(`[data-panel="${key}"]`);
+        const chev = btn?.querySelector(".chev");
+        if (!btn || !panel) return;
+
+        let open = defaultOpen === "true";
+        const saved = localStorage.getItem("dd_" + key);
+        if (saved === "true" || saved === "false") open = (saved === "true");
+
+        setOpen(panel, chev, open);
+
+        btn.addEventListener("click", () => {
+            const nowOpen = !panel.classList.contains("open");
+            setOpen(panel, chev, nowOpen);
+            localStorage.setItem("dd_" + key, String(nowOpen));
+        });
+
+        window.addEventListener("resize", () => {
+            if (panel.classList.contains("open")) {
+                panel.style.maxHeight = panel.scrollHeight + "px";
+            }
+        });
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initDropdown("ric", document.querySelector(`[data-dd="ric"]`)?.dataset.default);
+        initDropdown("roll", document.querySelector(`[data-dd="roll"]`)?.dataset.default);
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,47 @@
+CREATE PROCEDURE SP_Groups_Get
+AS
+BEGIN
+    SELECT * FROM Groups WHERE IsDeleted = 0
+END
+GO
+
+CREATE PROCEDURE SP_Groups_GetById
+@Id UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Groups WHERE Id = @Id AND IsDeleted = 0
+END
+GO
+
+CREATE PROCEDURE SP_Groups_Create
+@Id UNIQUEIDENTIFIER,
+@NamaDivisi NVARCHAR(255),
+@NamaPerusahaan NVARCHAR(255)
+AS
+BEGIN
+    INSERT INTO Groups(Id,NamaDivisi,NamaPerusahaan,CreatedAt,IsDeleted)
+    VALUES(@Id,@NamaDivisi,@NamaPerusahaan,SYSDATETIMEOFFSET(),0)
+END
+GO
+
+CREATE PROCEDURE SP_Groups_Update
+@Id UNIQUEIDENTIFIER,
+@NamaDivisi NVARCHAR(255),
+@NamaPerusahaan NVARCHAR(255)
+AS
+BEGIN
+    UPDATE Groups SET
+        NamaDivisi=@NamaDivisi,
+        NamaPerusahaan=@NamaPerusahaan,
+        UpdatedAt=SYSDATETIMEOFFSET()
+    WHERE Id=@Id
+END
+GO
+
+CREATE PROCEDURE SP_Groups_Delete
+@Id UNIQUEIDENTIFIER
+AS
+BEGIN
+    UPDATE Groups SET IsDeleted=1 WHERE Id=@Id
+END
+GO

@@ -1,0 +1,75 @@
+CREATE PROCEDURE SP_Users_Get
+AS
+BEGIN
+    SELECT * FROM Users WHERE IsDeleted = 0
+END
+GO
+
+CREATE PROCEDURE SP_Users_GetById
+@Id UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Users WHERE Id=@Id AND IsDeleted=0
+END
+GO
+
+CREATE PROCEDURE SP_Users_Create
+@Id UNIQUEIDENTIFIER,
+@IdGroup UNIQUEIDENTIFIER,
+@Name NVARCHAR(255),
+@Email NVARCHAR(255),
+@Role NVARCHAR(50),
+@Position NVARCHAR(255),
+@TandaTanganFile NVARCHAR(MAX),
+@PasswordHash NVARCHAR(MAX)
+AS
+BEGIN
+    INSERT INTO Users(Id,IdGroup,Name,Email,Role,Position,TandaTanganFile,PasswordHash,CreatedAt,IsDeleted)
+    VALUES(@Id,@IdGroup,@Name,@Email,@Role,@Position,@TandaTanganFile,@PasswordHash,SYSDATETIMEOFFSET(),0)
+END
+GO
+
+CREATE PROCEDURE SP_Users_Update
+@Id UNIQUEIDENTIFIER,
+@Name NVARCHAR(255),
+@Position NVARCHAR(255),
+@Role NVARCHAR(50),
+@TandaTanganFile NVARCHAR(MAX)
+AS
+BEGIN
+    UPDATE Users SET
+        Name=@Name,
+        Position=@Position,
+        Role=@Role,
+        TandaTanganFile=@TandaTanganFile,
+        UpdatedAt=SYSDATETIMEOFFSET()
+    WHERE Id=@Id
+END
+GO
+
+CREATE PROCEDURE SP_Users_Delete
+@Id UNIQUEIDENTIFIER
+AS
+BEGIN
+    UPDATE Users SET IsDeleted=1 WHERE Id=@Id
+END
+GO
+
+
+
+
+
+
+// 
+CREATE PROCEDURE SP_Users_SetAsPic
+    @UserId UNIQUEIDENTIFIER,
+    @GroupId UNIQUEIDENTIFIER,
+    @Role NVARCHAR(50)
+AS
+BEGIN
+    UPDATE Users
+    SET 
+        IdGroup = @GroupId,
+        Role = @Role
+    WHERE Id = @UserId;
+END

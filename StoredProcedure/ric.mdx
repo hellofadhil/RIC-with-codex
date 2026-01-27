@@ -1,0 +1,120 @@
+CREATE PROCEDURE SP_FormRics_Get
+AS
+BEGIN
+SET NOCOUNT ON;
+
+    SELECT *
+    FROM FormRics
+    WHERE IsDeleted = 0
+
+END
+GO
+
+CREATE PROCEDURE SP_FormRics_GetById
+@Id UNIQUEIDENTIFIER
+AS
+BEGIN
+SET NOCOUNT ON;
+
+    SELECT *
+    FROM FormRics
+    WHERE Id = @Id AND IsDeleted = 0
+
+END
+GO
+
+CREATE PROCEDURE SP_FormRics_Create
+@Id UNIQUEIDENTIFIER,
+@IdUser UNIQUEIDENTIFIER,
+@IdGroupUser UNIQUEIDENTIFIER,
+@Judul NVARCHAR(MAX),
+@Hastag NVARCHAR(MAX),
+@AsIsProcessRasciFile NVARCHAR(MAX),
+@Permasalahan NVARCHAR(MAX),
+@DampakMasalah NVARCHAR(MAX),
+@FaktorPenyebabMasalah NVARCHAR(MAX),
+@SolusiSaatIni NVARCHAR(MAX),
+@AlternatifSolusi NVARCHAR(MAX),
+@ToBeProcessBusinessRasciKkiFile NVARCHAR(MAX),
+@PotensiValueCreation NVARCHAR(MAX),
+@ExcpectedCompletionTargetFile NVARCHAR(MAX),
+@HasilSetelahPerbaikan NVARCHAR(MAX),
+@BrConfirm BIT,
+@SarmConfirm BIT,
+@EcsConfirm BIT,
+@Status NVARCHAR(50)
+AS
+BEGIN
+INSERT INTO FormRics (
+Id, IdUser, IdGroupUser, Judul, Hastag, AsIsProcessRasciFile, Permasalahan,
+DampakMasalah, FaktorPenyebabMasalah, SolusiSaatIni,
+AlternatifSolusi, ToBeProcessBusinessRasciKkiFile, PotensiValueCreation,
+ExcpectedCompletionTargetFile, HasilSetelahPerbaikan,
+BrConfirm, SarmConfirm, EcsConfirm, Status,
+CreatedAt, IsDeleted
+)
+VALUES (
+@Id, @IdUser, @IdGroupUser, @Judul, @Hastag, @AsIsProcessRasciFile, @Permasalahan,
+@DampakMasalah, @FaktorPenyebabMasalah, @SolusiSaatIni,
+@AlternatifSolusi, @ToBeProcessBusinessRasciKkiFile, @PotensiValueCreation,
+@ExcpectedCompletionTargetFile, @HasilSetelahPerbaikan,
+@BrConfirm, @SarmConfirm, @EcsConfirm, @Status,
+SYSDATETIMEOFFSET(), 0
+)
+END
+GO
+
+
+
+CREATE PROCEDURE SP_FormRics_Update
+    @Id UNIQUEIDENTIFIER,
+    @Judul NVARCHAR(MAX),
+    @Hastag NVARCHAR(MAX),
+    @AsIsProcessRasciFile NVARCHAR(MAX),
+    @Permasalahan NVARCHAR(MAX),
+    @DampakMasalah NVARCHAR(MAX),
+    @FaktorPenyebabMasalah NVARCHAR(MAX),
+    @SolusiSaatIni NVARCHAR(MAX),
+    @AlternatifSolusi NVARCHAR(MAX),
+    @ToBeProcessBusinessRasciKkiFile NVARCHAR(MAX),
+    @PotensiValueCreation NVARCHAR(MAX),
+    @ExcpectedCompletionTargetFile NVARCHAR(MAX),
+    @HasilSetelahPerbaikan NVARCHAR(MAX),
+    @BrConfirm BIT,
+    @SarmConfirm BIT,
+    @EcsConfirm BIT,
+    @Status NVARCHAR(50)
+AS
+BEGIN
+    UPDATE FormRics SET
+        Judul = @Judul,
+        Hastag = @Hastag,
+        AsIsProcessRasciFile = @AsIsProcessRasciFile,
+        Permasalahan = @Permasalahan,
+        DampakMasalah = @DampakMasalah,
+        FaktorPenyebabMasalah = @FaktorPenyebabMasalah,
+        SolusiSaatIni = @SolusiSaatIni,
+        AlternatifSolusi = @AlternatifSolusi,
+        ToBeProcessBusinessRasciKkiFile=@ToBeProcessBusinessRasciKkiFile,
+        PotensiValueCreation = @PotensiValueCreation,
+        ExcpectedCompletionTargetFile = @ExcpectedCompletionTargetFile,
+        HasilSetelahPerbaikan = @HasilSetelahPerbaikan,
+        BrConfirm = @BrConfirm,
+        SarmConfirm = @SarmConfirm,
+        EcsConfirm = @EcsConfirm,
+        Status=@Status,
+        UpdatedAt = SYSDATETIMEOFFSET()
+    WHERE Id=@Id AND IsDeleted=0
+END
+GO
+
+
+CREATE PROCEDURE SP_FormRics_Delete
+    @Id UNIQUEIDENTIFIER
+AS
+BEGIN
+    UPDATE FormRics
+    SET IsDeleted = 1
+    WHERE Id = @Id
+END
+GO

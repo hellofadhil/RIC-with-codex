@@ -1,0 +1,62 @@
+CREATE PROCEDURE SP_ReviewFormRics_Get
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT *
+    FROM ReviewFormRics
+    WHERE IsDeleted = 0
+END
+GO
+
+CREATE PROCEDURE SP_ReviewFormRics_GetById
+    @Id UNIQUEIDENTIFIER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT *
+    FROM ReviewFormRics
+    WHERE Id = @Id AND IsDeleted = 0
+END
+GO
+
+CREATE PROCEDURE SP_ReviewFormRics_Create
+    @Id UNIQUEIDENTIFIER,
+    @IdFormRic UNIQUEIDENTIFIER,
+    @IdUser UNIQUEIDENTIFIER,
+    @Catatan NVARCHAR(MAX),
+    @RoleReview NVARCHAR(50)
+AS
+BEGIN
+    INSERT INTO ReviewFormRics (
+        Id, IdFormRic, IdUser, Catatan, RoleReview,
+        CreatedAt, IsDeleted
+    )
+    VALUES (
+        @Id, @IdFormRic, @IdUser, @Catatan, @RoleReview,
+        SYSDATETIMEOFFSET(), 0
+    )
+END
+GO
+
+CREATE PROCEDURE SP_ReviewFormRics_Update
+    @Id UNIQUEIDENTIFIER,
+    @Catatan NVARCHAR(MAX)
+AS
+BEGIN
+    UPDATE ReviewFormRics SET
+        Catatan = @Catatan
+    WHERE Id = @Id AND IsDeleted = 0
+END
+GO
+
+CREATE PROCEDURE SP_ReviewFormRics_Delete
+    @Id UNIQUEIDENTIFIER
+AS
+BEGIN
+    UPDATE ReviewFormRics
+    SET IsDeleted = 1
+    WHERE Id = @Id
+END
+GO

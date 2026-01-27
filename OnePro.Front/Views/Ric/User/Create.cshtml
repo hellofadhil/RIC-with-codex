@@ -1,0 +1,361 @@
+@model OnePro.Front.Models.RicCreateViewModel
+@{
+    ViewBag.Title = "Form RIC New Development & Enhancement";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="min-h-screen bg-slate-50">
+    <div class="max-w-6xl mx-auto px-2 sm:px-6  py-4">
+
+        <form asp-controller="RicUser"
+              asp-action="Create"
+              method="post"
+              enctype="multipart/form-data">
+
+            @* @Html.AntiForgeryToken() *@
+
+            <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/80 overflow-hidden">
+                <!-- Section: Informasi Umum -->
+                <div class="border-b border-slate-100 bg-white px-8 py-4">
+                    <p class="text-xl font-semibold tracking-wide">
+                        RIC New Development & Enhancement
+                    </p>
+                </div>
+
+                <div class="p-8 space-y-8">
+                    @Html.EditorFor(m => m.JudulPermintaan, "TextInput", new {
+                        Label = "Judul Permintaan",
+                        Required = true,
+                        Placeholder = "Digitalisasi proses pengajuan IT equipment",
+                        HelpText = "Optimisasi proses bisnis dengan implementasi (Solusi Desain)"
+                    })
+
+                    <!-- Hashtag -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-slate-800">
+                            Hashtag
+                        </label>
+
+                        <div class="rounded-lg border border-dashed border-slate-200 bg-white px-4 py-3">
+                            <div id="hashtag-badges" class="flex flex-wrap gap-2 mb-2">
+                                @if (Model.Hashtags != null && Model.Hashtags.Any())
+                                {
+                                    for (var i = 0; i < Model.Hashtags.Count; i++)
+                                    {
+                                        <span class="tag-badge inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100">
+                                            <span>#@Model.Hashtags[i]</span>
+                                            <button type="button"
+                                                    class="tag-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 text-[10px] text-indigo-600"
+                                                    data-tag="@Model.Hashtags[i]">
+                                                ×
+                                            </button>
+                                            <input type="hidden" name="Hashtags[@i]" value="@Model.Hashtags[i]" />
+                                        </span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-xs text-slate-400 empty-hashtag-placeholder">
+                                        Belum ada hashtag. Tambahin buat ngelompokkin RIC lo.
+                                    </span>
+                                }
+                            </div>
+
+                            <input id="hashtag-input"
+                                   type="text"
+                                   class="w-full border-0 bg-transparent px-0 py-2 text-base text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
+                                   placeholder="Ketik hashtag lalu tekan Enter (mis. product_deployment, equipment_it)"
+                                   autocomplete="off" />
+                        </div>
+
+                        <p class="text-xs text-slate-400">
+                            Pakai format tanpa spasi biar gampang di-*filter* (contoh: <span class="font-mono text-[11px]">product_deployment</span>).
+                        </p>
+                    </div>
+
+                    @* AS-IS: multiple files *@
+                    @Html.EditorFor(m => m.AsIsRasciFiles, "MultipleFileInput", new {
+                        Label = "As-is Process & RASCI"
+                    })
+                </div>
+
+                <!-- Section: Permasalahan & Alternatif Solusi -->
+                <div class="border-y border-slate-100 bg-white px-8 py-4">
+                    <p class="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
+                        Permasalahan &amp; Alternatif Solusi
+                    </p>
+                </div>
+
+                <div class="p-8 space-y-8">
+                    @Html.EditorFor(m => m.Permasalahan, "TextAreaInput", new {
+                        Label = "Permasalahan",
+                        Required = true,
+                        Rows = 4,
+                        Placeholder = "Jelaskan masalah utama yang pengen lo beresin...",
+                        HelpText = "Fokus ke pain point terbesar (keterlambatan, error, bottleneck, dsb)."
+                    })
+
+                    @Html.EditorFor(m => m.DampakMasalah, "TextAreaInput", new {
+                        Label = "Dampak Masalah",
+                        Rows = 3,
+                        Placeholder = "Contoh: keterlambatan approval, kehilangan jejak dokumen, potensi audit finding..."
+                    })
+
+                    @Html.EditorFor(m => m.FaktorPenyebab, "TextAreaInput", new {
+                        Label = "Faktor Penyebab Masalah",
+                        Rows = 3,
+                        Placeholder = "Contoh: proses manual, tidak ada sistem tracking, dependency ke 1 orang, dsb..."
+                    })
+
+                    @Html.EditorFor(m => m.SolusiSaatIni, "TextAreaInput", new {
+                        Label = "Solusi Saat Ini",
+                        Rows = 3,
+                        Placeholder = "Proses yang sekarang dipakai (mis. admin catat manual di Excel, approval via email, dsb)..."
+                    })
+
+                    <!-- Alternatif Solusi (badge + textarea) -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-semibold text-slate-900">
+                                Alternatif Solusi
+                            </h2>
+                            <span class="rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-medium text-indigo-700">
+                                Minimal 1 alternatif yang realistis
+                            </span>
+                        </div>
+
+                        <div class="rounded-lg border border-dashed border-slate-200 bg-white px-4 py-3">
+                            <div id="alternatif-badges" class="flex flex-wrap gap-2 mb-2">
+                                @if (Model.Alternatifs != null && Model.Alternatifs.Any())
+                                {
+                                    for (var i = 0; i < Model.Alternatifs.Count; i++)
+                                    {
+                                        <span class="alt-badge inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-100">
+                                            <span>@Model.Alternatifs[i]</span>
+                                            <button type="button"
+                                                    class="alt-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-600"
+                                                    data-alt="@Model.Alternatifs[i]">
+                                                ×
+                                            </button>
+                                            <input type="hidden" name="Alternatifs[@i]" value="@Model.Alternatifs[i]" />
+                                        </span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-xs text-slate-400 empty-alt-placeholder">
+                                        Belum ada alternatif. Tambah minimal satu opsi solusi.
+                                    </span>
+                                }
+                            </div>
+
+                            <textarea id="alternatif-input"
+                                      rows="2"
+                                      class="w-full border-0 bg-transparent px-0 py-2 text-base text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none resize-none"
+                                      placeholder="Ketik alternatif, tekan Enter untuk simpan sebagai item (mis. bangun aplikasi internal, pakai tool existing, dll)..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: To‑Be & Value -->
+                <div class="border-y border-slate-100 bg-white px-8 py-4">
+                    <p class="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
+                        To‑Be Process &amp; Value
+                    </p>
+                </div>
+
+                <div class="p-8 space-y-8">
+                    @* TO-BE: multiple files *@
+                    @Html.EditorFor(m => m.ToBeProcessFiles, "MultipleFileInput", new {
+                        Label = "To be Process Business + RASCI + KKI"
+                    })
+
+                    @Html.EditorFor(m => m.PotentialValue, "TextAreaInput", new {
+                        Label = "Potensi Value Creation/Value Solution/Value Addition/Cost Reduction/Sustainability",
+                        Rows = 3,
+                        Placeholder = "Jelaskan estimasi benefit: efisiensi waktu, pengurangan error, pengurangan biaya, peningkatan kontrol, dsb..."
+                    })
+
+                    @* EXPECTED COMPLETION: multiple files *@
+                    @Html.EditorFor(m => m.ExpectedCompletionFiles, "MultipleFileInput", new {
+                        Label = "Expected Completion Target & Expected Target Revisi STK"
+                    })
+
+                    @Html.EditorFor(m => m.HasilSetelahPerbaikan, "TextAreaInput", new {
+                        Label = "Hasil Setelah Perbaikan (Ekspektasi)",
+                        Rows = 3,
+                        Placeholder = "Gambarkan kondisi ideal setelah perbaikan: tracking real-time, SLA jelas, laporan otomatis, dsb..."
+                    })
+                </div>
+
+                <!-- Footer buttons -->
+                <div class="flex flex-col gap-4 border-t border-slate-100 bg-white px-8 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <button type="reset"
+                            class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700">
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-[11px]">
+                            ↺
+                        </span>
+                        Reset
+                    </button>
+
+                    <div class="flex items-center gap-3">
+                        <button type="submit" name="action" value="save"
+                                class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100 transition-colors">
+                            Simpan Draft
+                        </button>
+                        <button type="submit" name="action" value="submit"
+                                class="inline-flex items-center justify-center rounded-lg border border-indigo-600 bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:ring-offset-1 focus:ring-offset-slate-50 transition-all">
+                            Ajukan RIC
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        @section Scripts {
+            <script>
+                // ===== HASHTAG =====
+                (function () {
+                    const badgesContainer = document.getElementById('hashtag-badges');
+                    const input = document.getElementById('hashtag-input');
+
+                    function createTagBadge(tag) {
+                        tag = tag.trim();
+                        if (!tag) return;
+
+                        const exists = badgesContainer.querySelector('input[type="hidden"][value="' + tag + '"]');
+                        if (exists) return;
+
+                        const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
+
+                        const placeholder = badgesContainer.querySelector('.empty-hashtag-placeholder');
+                        if (placeholder) placeholder.remove();
+
+                        const span = document.createElement('span');
+                        span.className = 'tag-badge inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100';
+
+                        span.innerHTML =
+                            '<span>#' + tag + '</span>' +
+                            '<button type="button" class="tag-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 text-[10px] text-indigo-600" data-tag="' + tag + '">×</button>' +
+                            '<input type="hidden" name="Hashtags[' + index + ']" value="' + tag + '" />';
+
+                        badgesContainer.appendChild(span);
+                    }
+
+                    if (input) {
+                        input.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const value = input.value.replace(/^#+/, '');
+                                if (value.trim()) {
+                                    createTagBadge(value);
+                                    input.value = '';
+                                }
+                            }
+                        });
+                    }
+
+                    if (badgesContainer) {
+                        badgesContainer.addEventListener('click', function (e) {
+                            if (e.target.classList.contains('tag-remove')) {
+                                const badge = e.target.closest('.tag-badge');
+                                if (badge) badge.remove();
+
+                                const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
+                                hiddenInputs.forEach((inp, idx) => {
+                                    inp.name = 'Hashtags[' + idx + ']';
+                                });
+
+                                if (hiddenInputs.length === 0) {
+                                    const span = document.createElement('span');
+                                    span.className = 'text-xs text-slate-400 empty-hashtag-placeholder';
+                                    span.textContent = 'Belum ada hashtag. Tambahin buat ngelompokkin RIC lo.';
+                                    badgesContainer.appendChild(span);
+                                }
+                            }
+                        });
+                    }
+                })();
+
+                // ===== ALTERNATIF SOLUSI =====
+                (function () {
+                    const badgesContainer = document.getElementById('alternatif-badges');
+                    const input = document.getElementById('alternatif-input');
+
+                    function createAltBadge(text) {
+                        text = text.trim();
+                        if (!text) return;
+
+                        const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
+
+                        const placeholder = badgesContainer.querySelector('.empty-alt-placeholder');
+                        if (placeholder) placeholder.remove();
+
+                        const span = document.createElement('span');
+                        span.className = 'alt-badge inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-100';
+
+                        span.innerHTML =
+                            '<span>' + text + '</span>' +
+                            '<button type="button" class="alt-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-600" data-alt="' + text + '">×</button>' +
+                            '<input type="hidden" name="Alternatifs[' + index + ']" value="' + text + '" />';
+
+                        badgesContainer.appendChild(span);
+                    }
+
+                    if (input) {
+                        input.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const lines = input.value.split('\n');
+                                lines.forEach(line => createAltBadge(line));
+                                input.value = '';
+                            }
+                        });
+                    }
+
+                    if (badgesContainer) {
+                        badgesContainer.addEventListener('click', function (e) {
+                            if (e.target.classList.contains('alt-remove')) {
+                                const badge = e.target.closest('span.alt-badge');
+                                if (badge) badge.remove();
+
+                                const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
+                                hiddenInputs.forEach((inp, idx) => {
+                                    inp.name = 'Alternatifs[' + idx + ']';
+                                });
+
+                                if (hiddenInputs.length === 0) {
+                                    const span = document.createElement('span');
+                                    span.className = 'text-xs text-slate-400 empty-alt-placeholder';
+                                    span.textContent = 'Belum ada alternatif. Tambah minimal satu opsi solusi.';
+                                    badgesContainer.appendChild(span);
+                                }
+                            }
+                        });
+                    }
+                })();
+
+                // ===== FILE INPUT LABEL (multiple aware) =====
+                document.addEventListener("change", function (e) {
+                    if (!(e.target instanceof HTMLInputElement)) return;
+                    if (e.target.type !== "file") return;
+
+                    const files = e.target.files;
+                    if (!files || files.length === 0) return;
+
+                    const label = e.target.closest("label");
+                    if (!label) return;
+
+                    const nameEl = label.querySelector(".file-name");
+                    if (!nameEl) return;
+
+                    if (files.length === 1) {
+                        nameEl.textContent = files[0].name;
+                    } else {
+                        nameEl.textContent = files.length + " file dipilih";
+                    }
+                });
+            </script>
+        }
+    </div>
+</div>

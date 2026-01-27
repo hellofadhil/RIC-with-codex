@@ -1,0 +1,28 @@
+@model string
+@{
+    var label = ViewData["Label"] as string;
+    var isRequired = (ViewData["Required"] as bool?) ?? false;
+    var help = ViewData["HelpText"] as string;
+    var ph = ViewData["Placeholder"] as string;
+}
+
+<div class="space-y-1.5">
+    @if (!string.IsNullOrEmpty(label))
+    {
+        <label class="block text-sm font-semibold text-slate-800">
+            @label @if (isRequired) { <span class="text-rose-500">*</span> }
+        </label>
+    }
+
+    @Html.TextBoxFor(m => m, new {
+        @class = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 transition-all",
+        placeholder = ph
+    })
+
+    @Html.ValidationMessageFor(m => m, "", new { @class = "text-xs text-rose-500" })
+
+    @if (!string.IsNullOrEmpty(help))
+    {
+        <p class="text-xs text-slate-400">@Html.Raw(help)</p>
+    }
+</div>

@@ -1,0 +1,16 @@
+ID,Task,Type,Priority,Owner,Start Date,End Date,Status,Duration (days)
+SP-01,Implement book catalog API (list + detail),Backend,High,BE,2026-01-29,2026-01-30,To Do,2
+SP-02,Build book catalog UI (user view),Frontend,High,FE,2026-01-29,2026-01-31,To Do,3
+SP-03,"Implement search & filter (title, category)",Backend,High,BE,2026-01-31,2026-02-01,To Do,2
+SP-04,Integrate search & filter UI,Frontend,High,FE,2026-02-01,2026-02-02,To Do,2
+SP-05,Create borrow transaction endpoint,Backend,High,BE,2026-02-03,2026-02-04,To Do,2
+SP-06,Validate stock availability on borrow,Backend,High,BE,2026-02-04,2026-02-05,To Do,2
+SP-07,Auto update stock after borrow,Backend,High,BE,2026-02-05,2026-02-05,To Do,1
+SP-08,Build admin borrowing approval UI,Frontend,High,FE,2026-02-06,2026-02-07,To Do,2
+SP-09,Implement approve/reject borrowing flow,Backend,High,BE,2026-02-07,2026-02-08,To Do,2
+SP-10,Implement return book flow + return date,Backend,High,BE,2026-02-09,2026-02-10,To Do,2
+SP-11,Auto restore stock after return,Backend,High,BE,2026-02-10,2026-02-10,To Do,1
+SP-12,Role-based access control (user/admin),Backend,High,BE,2026-02-11,2026-02-11,To Do,1
+SP-13,Prevent unauthorized access (ID tampering),Security,Medium,BE,2026-02-11,2026-02-11,To Do,1
+SP-14,Blackbox testing core borrowing flow,QA,Medium,QA,2026-02-12,2026-02-12,To Do,1
+SP-15,Bug fixing & regression test,QA,Medium,QA,2026-02-12,2026-02-12,To Do,1

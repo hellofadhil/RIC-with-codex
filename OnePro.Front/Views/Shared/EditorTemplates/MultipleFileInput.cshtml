@@ -1,0 +1,59 @@
+@model IEnumerable<Microsoft.AspNetCore.Http.IFormFile>
+@{
+    var label = ViewData["Label"] as string;
+}
+
+<div class="space-y-1">
+    @if (!string.IsNullOrEmpty(label))
+    {
+        <label class="block text-sm font-semibold text-slate-800">
+            @label
+        </label>
+    }
+
+    <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors">
+
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                 class="lucide lucide-upload-icon lucide-upload">
+                <path d="M12 3v12" />
+                <path d="m17 8-5-5-5 5" />
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            </svg>
+        </span>
+
+        <span class="file-name text-xs text-slate-500">
+            Pilih dokumen...
+        </span>
+
+        <input type="file"
+               name="@ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty)"
+               class="hidden file-input"
+               multiple />
+    </label>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('change', function (e) {
+        if (!e.target.matches('.file-input')) return;
+
+        const label = e.target.closest('label');
+        if (!label) return;
+
+        const span = label.querySelector('.file-name');
+        if (!span) return;
+
+        const files = e.target.files;
+        if (!files || files.length === 0) {
+            span.textContent = 'Pilih dokumen...';
+        } else if (files.length === 1) {
+            span.textContent = files[0].name;
+        } else {
+            span.textContent = files.length + ' file dipilih';
+        }
+    });
+</script>
+}

@@ -1,0 +1,137 @@
+using System.ComponentModel.DataAnnotations;
+using Core.Models.Enums;
+using Newtonsoft.Json;
+
+namespace Core.Models.Entities
+{
+    public class FormRic
+    {
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        public Guid IdUser { get; set; }
+        public Guid IdGroupUser { get; set; }
+
+        public string Judul { get; set; } = default!;
+
+        public List<string>? Hastag { get; set; }
+        public List<string>? AsIsProcessRasciFile { get; set; }
+
+        public string? Permasalahan { get; set; }
+        public string? DampakMasalah { get; set; }
+        public string? FaktorPenyebabMasalah { get; set; }
+        public string? SolusiSaatIni { get; set; }
+
+        public List<string>? AlternatifSolusi { get; set; }
+        public List<string>? ToBeProcessBusinessRasciKkiFile { get; set; }
+        public string? PotensiValueCreation { get; set; }
+
+        public List<string>? ExcpectedCompletionTargetFile { get; set; }
+
+        public string? HasilSetelahPerbaikan { get; set; }
+
+        public bool BrConfirm { get; set; }
+        public bool SarmConfirm { get; set; }
+        public bool EcsConfirm { get; set; }
+
+        public StatusRic Status { get; set; } = StatusRic.Draft;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public User? User { get; set; }
+        public Group? Group { get; set; }
+    }
+
+    // public class RicListItemResponse
+    // {
+    //     public Guid Id { get; set; }
+    //     public string Judul { get; set; } = default!;
+    //     public string? Permasalahan { get; set; }
+    //     public string? UserName { get; set; }
+    //     public string Status { get; set; } = default!;
+    //     public DateTime UpdatedAt { get; set; }
+    // }
+
+    // public class RicDetailResponse
+    // {
+    //     public Guid Id { get; set; }
+
+    //     public string Judul { get; set; } = default!;
+    //     public List<string>? Hastag { get; set; }
+    //     public List<string>? AsIsProcessRasciFile { get; set; }
+
+    //     public string? Permasalahan { get; set; }
+    //     public string? DampakMasalah { get; set; }
+    //     public string? FaktorPenyebabMasalah { get; set; }
+    //     public string? SolusiSaatIni { get; set; }
+
+    //     public List<string>? AlternatifSolusi { get; set; }
+    //     public List<string>? ToBeProcessBusinessRasciKkiFile { get; set; }
+    //     public string? PotensiValueCreation { get; set; }
+
+    //     public List<string>? ExcpectedCompletionTargetFile { get; set; }
+
+    //     [JsonProperty("hasilSetelahPerbaikan")]
+    //     public string? HasilSetelahPerbaikan { get; set; }
+
+    //     public int Status { get; set; }
+
+    //     // ✅ TAMBAH INI
+    //     [JsonProperty("reviews")]
+    //     public List<ReviewRicResponse>? Reviews { get; set; }
+
+    //     [JsonProperty("histories")]
+    //     public List<RicHistoryResponse>? Histories { get; set; }
+    // }
+
+    // public class FormRicDetailResponse
+    // {
+    //     public Guid Id { get; set; }
+    //     public Guid IdUser { get; set; }
+    //     public Guid IdGroupUser { get; set; }
+    //     public string? Judul { get; set; }
+
+    //     public List<string> Hastag { get; set; } = new();
+    //     public List<string> AsIsProcessRasciFile { get; set; } = new();
+
+    //     public string? Permasalahan { get; set; }
+    //     public string? DampakMasalah { get; set; }
+    //     public string? FaktorPenyebabMasalah { get; set; }
+    //     public string? SolusiSaatIni { get; set; }
+
+    //     public List<string> AlternatifSolusi { get; set; } = new();
+    //     public List<string> ToBeProcessBusinessRasciKkiFile { get; set; } = new();
+
+    //     public string? PotensiValueCreation { get; set; }
+    //     public List<string> ExcpectedCompletionTargetFile { get; set; } = new(); // nullable string sesuai contoh
+    //     public string? HasilSetelahPerbaikan { get; set; }
+
+    //     public StatusRic Status { get; set; }
+    //     public DateTime UpdatedAt { get; set; }
+
+    //     [JsonProperty("reviews")]
+    //     public List<ReviewRicResponse> Reviews { get; set; } = new();
+
+    //     [JsonProperty("histories")]
+    //     public List<RicHistoryResponse> Histories { get; set; } = new();
+    // }
+
+    // public class ReviewRicResponse
+    // {
+    //     public Guid Id { get; set; }
+    //     public string? Catatan { get; set; }
+    //     public string RoleReview { get; set; } = string.Empty;
+    //     public string? UserName { get; set; }
+    //     public DateTime CreatedAt { get; set; }
+    // }
+
+    // public class RicHistoryResponse
+    // {
+    //     public int Version { get; set; }
+    //     public string Snapshot { get; set; } = string.Empty;
+    //     public string? EditedFields { get; set; }
+    //     public string? EditorName { get; set; }
+    //     public DateTime CreatedAt { get; set; }
+    // }
+}

@@ -1,0 +1,321 @@
+@using OnePro.Front.Models
+@using OnePro.Front.Helpers
+@using Core.Models.Enums
+
+@model List<RicItemResponse>
+
+@{
+    ViewData["Title"] = "RIC List";
+    Layout = "_LayoutDashboard";
+
+    var userRole = ViewBag.UserRole as string ?? "";
+    var total = Model?.Count ?? 0;
+    var draftCount = Model?.Count(x => x.Status == StatusRic.Draft.ToString()) ?? 0;
+    var inReviewCount =
+        (Model?.Count(x =>
+            x.Status == StatusRic.Submitted_To_BR.ToString() ||
+            x.Status == StatusRic.Review_BR.ToString() ||
+            x.Status == StatusRic.Review_SARM.ToString() ||
+            x.Status == StatusRic.Review_ECS.ToString()
+        ) ?? 0);
+    var doneCount = Model?.Count(x => x.Status == StatusRic.Done.ToString()) ?? 0;
+}
+
+<div class="max-w-6xl mx-auto mt-6">
+
+
+
+    @* TOOLBAR *@
+    <div class="mt-5 bg-white border border-gray-200 shadow-lg rounded-3xl p-4 md:p-5">
+        <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+            <div class="flex-1">
+                <label class="text-xs text-gray-500">Search (judul / user / id)</label>
+                <div class="mt-1 relative">
+                    <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input id="ricSearch"
+                           type="text"
+                           placeholder="Ketik buat cari..."
+                           class="w-full pl-10 pr-3 py-2.5 rounded-2xl border border-gray-200
+                                  focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-300
+                                  text-sm" />
+                </div>
+            </div>
+
+            <div class="w-full md:w-56">
+                <label class="text-xs text-gray-500">Filter Status</label>
+                <select id="statusFilter"
+                        class="mt-1 w-full px-3 py-2.5 rounded-2xl border border-gray-200
+                               focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-300
+                               text-sm">
+                    <option value="">All</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Submitted_To_BR">Submitted To BR</option>
+                    <option value="Review_BR">Review BR</option>
+                    <option value="Review_SARM">Review SARM</option>
+                    <option value="Review_ECS">Review ECS</option>
+                    <option value="Done">Done</option>
+                </select>
+            </div>
+
+            <div class="md:self-end">
+                <button id="clearFilter"
+                        type="button"
+                        class="w-full md:w-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl
+                               border border-gray-200 hover:bg-gray-50 text-sm font-medium transition">
+                    <i class="ri-refresh-line"></i>
+                    Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @* TABLE *@
+    <div class="mt-5 bg-white border border-gray-200 shadow-xl rounded-3xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm text-left text-gray-700">
+                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <tr>
+                        <th scope="col" class="px-5 py-4 w-40">ID</th>
+                        <th scope="col" class="px-5 py-4">Judul</th>
+                        <th scope="col" class="px-5 py-4">User PIC</th>
+                        <th scope="col" class="px-5 py-4 w-32">Status</th>
+                        <th scope="col" class="px-5 py-4 w-40">Last Update</th>
+                        <th scope="col" class="px-5 py-4 w-44 text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="ricTableBody" class="divide-y divide-gray-100 bg-white">
+                    @if (Model?.Any() == true)
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr class="hover:bg-gray-50/80 transition-colors duration-150"
+                                data-status="@item.Status"
+                                data-search="@($"{item.Id} {item.Judul} {item.UserName} {item.Status}").ToLower()">
+                                <td class="px-5 py-4 text-xs text-gray-500 font-mono">
+                                    <div class="truncate max-w-[7rem]" title="@item.Id">@item.Id</div>
+                                </td>
+
+                                <td class="px-5 py-4">
+<div class="font-semibold text-gray-900"
+     title="@item.Judul">
+    @(item.Judul?.Length > 50 
+        ? item.Judul.Substring(0, 50) + "..." 
+        : item.Judul)
+</div>
+                                    @* <div class="text-xs text-gray-500 mt-0.5">
+                                        <span class="inline-flex items-center gap-1">
+                                            <i class="ri-hashtag text-gray-400"></i>
+                                            @item.Status
+                                        </span>
+                                    </div> *@
+                                </td>
+
+                                <td class="px-5 py-4 text-gray-700">
+                                    <div class="inline-flex items-center gap-2">
+                                        <div class="leading-tight">
+                                            <div class="font-medium">@item.UserName</div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-5 py-4">
+                                    <span class="@GetStatusBadgeClass(item.Status) px-2.5 py-1 rounded-full text-xs font-semibold">
+                                        @item.Status
+                                    </span>
+                                </td>
+
+                                <td class="px-5 py-4 text-gray-600 text-xs">
+                                    <div class="inline-flex items-center gap-2">
+                                        <i class="ri-time-line text-gray-400"></i>
+                                        @item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+                                    </div>
+                                </td>
+
+                                <td class="px-5 py-4">
+                                    <div class="flex items-center justify-center gap-2">
+
+                                        @* Details - always *@
+                                        <a asp-action="Details" asp-route-id="@item.Id"
+                                           title="View Details"
+                                           class="inline-flex items-center justify-center w-10 h-10 rounded-2xl
+                                                  border border-gray-200 hover:bg-blue-50 transition">
+                                            <i class="ri-eye-line text-blue-600 text-lg"></i>
+                                        </a>
+
+                                        @* USER (creator-side) : Draft-only actions *@
+                                        @if ((userRole == "0" || userRole == "1") &&
+                                             item.Status == StatusRic.Draft.ToString())
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                               title="Edit RIC"
+                                               class="inline-flex items-center justify-center w-10 h-10 rounded-2xl
+                                                      border border-gray-200 hover:bg-yellow-50 transition">
+                                                <i class="ri-edit-2-line text-yellow-600 text-lg"></i>
+                                            </a>
+
+                                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        title="Delete RIC"
+                                                        onclick="return confirm('Yakin ingin menghapus RIC ini?')"
+                                                        class="inline-flex items-center justify-center w-10 h-10 rounded-2xl
+                                                               border border-gray-200 hover:bg-red-50 transition">
+                                                    <i class="ri-delete-bin-line text-red-600 text-lg"></i>
+                                                </button>
+                                            </form>
+
+                                            <form asp-action="Submit" asp-route-id="@item.Id" method="post" class="inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        title="Submit to BR"
+                                                        onclick="return confirm('Kirim RIC ini ke BR?')"
+                                                        class="inline-flex items-center justify-center w-10 h-10 rounded-2xl
+                                                               border border-gray-200 hover:bg-green-50 transition">
+                                                    <i class="ri-send-plane-line text-green-600 text-lg"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @* BR: all BR roles can review when BR status *@
+                                        @* @if ((userRole == "4" || userRole == "5" || userRole == "6" || userRole == "7") && *@
+                                        @if ((userRole == "4") &&
+                                             (item.Status == StatusRic.Submitted_To_BR.ToString() ||
+                                              item.Status == StatusRic.Review_BR.ToString() ||
+                                              item.Status == StatusRic.Return_ECS_To_BR.ToString() ||
+                                              item.Status == StatusRic.Return_SARM_To_BR.ToString() ))
+                                        {
+                       <a asp-controller="RicReview"
+   asp-action="ReviewEdit"
+   asp-route-id="@item.Id"
+   class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl
+          bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition"
+   title="Review RIC (BR)">
+    <i class="ri-check-double-line text-base"></i>
+    Review
+</a>
+                                        }
+
+                                        @* SARM *@
+                                        @if ((userRole == "8" || userRole == "9" || userRole == "10" || userRole == "11") &&
+                                             item.Status == StatusRic.Review_SARM.ToString())
+                                        {
+                                            <a asp-controller="RicReview" asp-action="ReviewEdit" asp-route-id="@item.Id"
+                                               class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl
+                                                      bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
+                                               title="Review RIC (SARM)">
+                                                <i class="ri-check-double-line text-base"></i>
+                                                Review
+                                            </a>
+                                        }
+
+                                        @* ECS *@
+                                        @if ((userRole == "12" || userRole == "13" || userRole == "14" || userRole == "15") &&
+                                             item.Status == StatusRic.Review_ECS.ToString())
+                                        {
+                                            <a asp-controller="RicReview" asp-action="ReviewEdit" asp-route-id="@item.Id"
+                                               class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl
+                                                      bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition"
+                                               title="Review RIC (ECS)">
+                                                <i class="ri-check-double-line text-base"></i>
+                                                Review
+                                            </a>
+                                        }
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    <div class="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center">
+                                        <i class="ri-inbox-line text-3xl text-gray-300"></i>
+                                    </div>
+                                    <p class="text-gray-700 font-semibold">Belum ada RIC untuk group kamu.</p>
+                                    <p class="text-gray-500 text-sm">Nanti kalau ada, bakal muncul rapi di sini 😉</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* footer hint *@
+        <div class="px-5 py-4 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
+            <div class="inline-flex items-center gap-2">
+                <i class="ri-information-line"></i>
+                Tip: pakai Search + Filter biar cepet nemu RIC.
+            </div>
+            <div class="font-medium">
+                Showing <span id="shownCount">@total</span> of @total
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    (function () {
+        const searchInput = document.getElementById('ricSearch');
+        const statusFilter = document.getElementById('statusFilter');
+        const clearBtn = document.getElementById('clearFilter');
+        const tbody = document.getElementById('ricTableBody');
+        const shownCount = document.getElementById('shownCount');
+
+        if (!searchInput || !statusFilter || !clearBtn || !tbody) return;
+
+        const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
+
+        function applyFilter() {
+            const q = (searchInput.value || '').trim().toLowerCase();
+            const s = (statusFilter.value || '').trim();
+
+            let visible = 0;
+
+            rows.forEach(r => {
+                const hay = r.getAttribute('data-search') || '';
+                const st = r.getAttribute('data-status') || '';
+                const okQ = !q || hay.includes(q);
+                const okS = !s || st === s;
+
+                const show = okQ && okS;
+                r.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            if (shownCount) shownCount.textContent = visible;
+        }
+
+        searchInput.addEventListener('input', applyFilter);
+        statusFilter.addEventListener('change', applyFilter);
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            statusFilter.value = '';
+            applyFilter();
+        });
+
+        applyFilter();
+    })();
+</script>
+}
+
+@functions {
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Draft"           => "bg-gray-100 text-gray-700 border border-gray-200",
+            "Submitted_To_BR" => "bg-blue-100 text-blue-700 border border-blue-200",
+            "Review_BR"       => "bg-indigo-100 text-indigo-700 border border-indigo-200",
+            "Review_SARM"     => "bg-emerald-100 text-emerald-700 border border-emerald-200",
+            "Review_ECS"      => "bg-teal-100 text-teal-700 border border-teal-200",
+            "Done"            => "bg-green-100 text-green-700 border border-green-200",
+            _                 => "bg-gray-100 text-gray-600 border border-gray-200"
+        };
+    }
+}

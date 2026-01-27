@@ -1,0 +1,66 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="RestSharp" Version="112.1.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj" />
+  </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="if exist &quot;$(TargetDir)Azure.Core.dll&quot; del &quot;$(TargetDir)Azure.Core.dll&quot;&#xD;&#xA;if exist &quot;$(TargetDir)Azure.Identity.dll&quot; del &quot;$(TargetDir)Azure.Identity.dll&quot;&#xD;&#xA;if exist &quot;$(TargetDir)System.ClientModel.dll&quot; del &quot;$(TargetDir)System.ClientModel.dll&quot;&#xD;&#xA;" />
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="if exist &quot;$(TargetDir)Azure.Core.dll&quot; (&#xA;    echo &quot;Deleting Azure.Core.dll&quot;&#xA;    del &quot;$(TargetDir)Azure.Core.dll&quot;&#xA;)&#xA;if exist &quot;$(TargetDir)Azure.Identity.dll&quot; (&#xA;    echo &quot;Deleting Azure.Identity.dll&quot;&#xA;    del &quot;$(TargetDir)Azure.Identity.dll&quot;&#xA;)&#xD;&#xA;if exist &quot;$(TargetDir)System.ClientModel.dll&quot; (&#xA;    echo &quot;Deleting System.ClientModel.dll&quot;&#xA;    del &quot;$(TargetDir)System.ClientModel.dll&quot;&#xA;)" />
+  </Target>
+
+  <Target Name="BeforePublish" BeforeTargets="Publish">
+    <Exec Command="if exist &quot;$(OutDir)Azure.Core.dll&quot; del &quot;$(OutDir)Azure.Core.dll&quot;&#xD;&#xA;if exist &quot;$(OutDir)Azure.Identity.dll&quot; del &quot;$(OutDir)Azure.Identity.dll&quot;&#xD;&#xA;if exist &quot;$(OutDir)System.ClientModel.dll&quot; del &quot;$(OutDir)System.ClientModel.dll&quot;&#xD;&#xA;" />
+  </Target>
+
+  <Target Name="AfterPublish" AfterTargets="Publish">
+    <Message Text="AfterPublish target is triggered. Deleting files from $(PublishDir)..." Importance="high" />
+    <ItemGroup>
+      <FilesToDelete Include="$(PublishDir)Azure.Core.dll;$(PublishDir)Azure.Identity.dll;$(PublishDir)System.ClientModel.dll" />
+    </ItemGroup>
+    <Message Text="Deleting files: @(FilesToDelete)" Importance="high" />
+    <Delete Files="@(FilesToDelete)" Condition="Exists('%(FilesToDelete.FullPath)')" />
+    <Exec Command="if not exist $(PublishDir)Azure.Core.dll ( echo Azure.Core.dll was successfully deleted. ) else ( echo Warning: Azure.Core.dll was not deleted. )" />
+    <Exec Command="if not exist $(PublishDir)Azure.Identity.dll ( echo Azure.Identity.dll was successfully deleted. ) else ( echo Warning: Azure.Identity.dll was not deleted. )" />
+    <Exec Command="if not exist $(PublishDir)System.ClientModel.dll ( echo System.ClientModel.dll was successfully deleted. ) else ( echo Warning: System.ClientModel.dll was not deleted. )" />
+  </Target>
+
+  <Target Name="AfterCopyFilesToPublishDirectory" AfterTargets="CopyFilesToPublishDirectory">
+    <Message Text="AfterCopyFilesToPublishDirectory target is triggered. Checking $(PublishDir) for deletion..." Importance="high" />
+    <ItemGroup>
+      <FilesToDelete Include="$(PublishDir)Azure.Core.dll;$(PublishDir)Azure.Identity.dll;$(PublishDir)System.ClientModel.dll" />
+    </ItemGroup>
+    <Message Text="Deleting files: @(FilesToDelete)" Importance="high" />
+    <Delete Files="@(FilesToDelete)" Condition="Exists('%(FilesToDelete.FullPath)')" />
+    <Exec Command="if not exist $(PublishDir)Azure.Core.dll ( echo Azure.Core.dll was successfully deleted. ) else ( echo Warning: Azure.Core.dll was not deleted. )" />
+    <Exec Command="if not exist $(PublishDir)Azure.Identity.dll ( echo Azure.Identity.dll was successfully deleted. ) else ( echo Warning: Azure.Identity.dll was not deleted. )" />
+    <Exec Command="if not exist $(PublishDir)System.ClientModel.dll ( echo System.ClientModel.dll was successfully deleted. ) else ( echo Warning: System.ClientModel.dll was not deleted. )" />
+  </Target>
+  
+</Project>

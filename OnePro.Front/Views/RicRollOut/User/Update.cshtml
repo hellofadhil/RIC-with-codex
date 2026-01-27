@@ -1,0 +1,464 @@
+@using System.Linq
+@using System.IO
+@* @model OnePro.Front.Models.RicRollOut.RicRollOutCreateViewModel *@
+@* @model OnePro.Front.Models.RicRollOut *@
+@model OnePro.Front.Models.RicRollOut.RicRollOutDetailViewModel
+
+@using System.Text.Encodings.Web
+@* @using Microsoft.AspNetCore.Html *@
+@using Microsoft.AspNetCore.Html
+
+
+@{
+    ViewBag.Title = "Update RIC RollOut";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="min-h-screen bg-slate-50">
+    <div class="max-w-7xl mx-auto px-2 sm:px-6 py-4">
+
+<form asp-controller="RicRollOutUser"
+      asp-action="Resubmit"
+      asp-route-id="@Model.Id"
+      method="post"
+      enctype="multipart/form-data">
+
+
+            @Html.AntiForgeryToken()
+            <input asp-for="Id" type="hidden" />
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- MAIN -->
+                <div class="lg:col-span-8">
+
+                    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/80 overflow-hidden">
+
+                        <!-- HEADER -->
+                        <div class="border-b border-slate-100 bg-white px-8 py-4">
+                            <p class="text-xl font-semibold tracking-wide">
+                                Update RIC RollOut
+                            </p>
+                            <p class="text-sm text-slate-500 mt-1">
+                                Status pengajuan kamu lagi <span class="font-semibold text-red-600">Rejected</span>. Silakan perbaiki sesuai catatan reviewer, lalu resubmit.
+                            </p>
+                        </div>
+
+                        <!-- CONTENT -->
+                        <div class="p-8 space-y-8">
+
+                            <!-- Entitas -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-800">
+                                    Entitas <span class="text-red-600">*</span>
+                                </label>
+                                <input asp-for="Entitas"
+                                       class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900
+                                              focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                                       placeholder="Contoh: PT Pertamina Patra Niaga / PT Pertamina Hulu Rokan" />
+                                <span asp-validation-for="Entitas" class="text-xs text-red-600"></span>
+                            </div>
+
+                            <!-- Judul Aplikasi -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-800">
+                                    Judul Aplikasi <span class="text-red-600">*</span>
+                                </label>
+                                <input asp-for="JudulAplikasi"
+                                       class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900
+                                              focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                                       placeholder="Contoh: Aplikasi Monitoring Kehadiran PKL" />
+                                <p class="text-xs text-slate-400">
+                                    Nama aplikasi / sistem yang akan di-rollout.
+                                </p>
+                                <span asp-validation-for="JudulAplikasi" class="text-xs text-red-600"></span>
+                            </div>
+
+                            <!-- Hashtag -->
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-800">
+                                    Hashtag
+                                </label>
+
+                                <div class="rounded-lg border border-dashed border-slate-200 bg-white px-4 py-3">
+                                    <div id="hashtag-badges" class="flex flex-wrap gap-2 mb-2">
+                                        @if (Model.Hashtags != null && Model.Hashtags.Any())
+                                        {
+                                            for (var i = 0; i < Model.Hashtags.Count; i++)
+                                            {
+                                                <span class="tag-badge inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100">
+                                                    <span>#@Model.Hashtags[i]</span>
+                                                    <button type="button"
+                                                            class="tag-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 text-[10px] text-indigo-600"
+                                                            data-tag="@Model.Hashtags[i]">
+                                                        ×
+                                                    </button>
+                                                    <input type="hidden" name="Hashtags[@i]" value="@Model.Hashtags[i]" />
+                                                </span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-xs text-slate-400 empty-hashtag-placeholder">
+                                                Belum ada hashtag. Tambahin buat ngelompokkin RollOut lo.
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <input id="hashtag-input"
+                                           type="text"
+                                           class="w-full border-0 bg-transparent px-0 py-2 text-base text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
+                                           placeholder="Ketik hashtag lalu tekan Enter (mis. rollout, go_live, readiness)"
+                                           autocomplete="off" />
+                                </div>
+
+                                <p class="text-xs text-slate-400">
+                                    Pakai format tanpa spasi biar gampang di-filter (contoh: <span class="font-mono text-[11px]">go_live</span>).
+                                </p>
+                            </div>
+
+                            <!-- FILES -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                <!-- Compare With As-Is Holding Process Files -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-semibold text-slate-800">
+                                        Compare With As-Is Holding Process (Files)
+                                    </label>
+
+                                    @if (Model.ExistingCompareWithAsIsHoldingProcessFileUrls != null && Model.ExistingCompareWithAsIsHoldingProcessFileUrls.Any())
+                                    {
+                                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                            <p class="text-xs font-medium text-slate-700">File saat ini:</p>
+                                            <ul class="mt-2 list-disc pl-5 space-y-1 text-xs text-slate-600">
+                                                @{
+                                                    var i = 0;
+                                                    foreach (var url in Model.ExistingCompareWithAsIsHoldingProcessFileUrls)
+                                                    {
+                                                        <li class="flex items-center justify-between gap-3">
+                                                            <a href="@url" target="_blank" class="text-indigo-600 hover:underline">
+                                                                @System.IO.Path.GetFileName(url)
+                                                            </a>
+                                                            <input type="hidden"
+                                                                   name="ExistingCompareWithAsIsHoldingProcessFileUrls[@i]"
+                                                                   value="@url" />
+                                                        </li>
+                                                        i++;
+                                                    }
+                                                }
+                                            </ul>
+                                            <p class="mt-2 text-[11px] text-slate-500">
+                                                Kosongkan input file di bawah kalau tidak ingin mengganti.
+                                            </p>
+                                        </div>
+                                    }
+
+                                    <label class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+                                        <div class="flex items-center gap-3">
+                                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-200">
+                                                <i class="ri-upload-cloud-2-line text-xl text-slate-600"></i>
+                                            </span>
+                                            <div>
+                                                <div class="text-sm font-medium text-slate-800">Pilih dokumen</div>
+                                                <div class="file-name text-xs text-slate-400">Bisa multiple file</div>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-slate-500">Browse</span>
+
+                                        <input asp-for="CompareWithAsIsHoldingProcessFiles" type="file" multiple class="hidden" />
+                                    </label>
+
+                                    <p class="text-xs text-slate-400">
+                                        Upload dokumen pembanding proses holding (as-is).
+                                    </p>
+                                    <span asp-validation-for="CompareWithAsIsHoldingProcessFiles" class="text-xs text-red-600"></span>
+                                </div>
+
+                                <!-- STK As-Is To-Be Files -->
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-semibold text-slate-800">
+                                        STK As-Is To-Be (Files)
+                                    </label>
+
+                                    @if (Model.ExistingStkAsIsToBeFileUrls != null && Model.ExistingStkAsIsToBeFileUrls.Any())
+                                    {
+                                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                            <p class="text-xs font-medium text-slate-700">File saat ini:</p>
+                                            <ul class="mt-2 list-disc pl-5 space-y-1 text-xs text-slate-600">
+                                                @{
+                                                    var i = 0;
+                                                    foreach (var url in Model.ExistingStkAsIsToBeFileUrls)
+                                                    {
+                                                        <li class="flex items-center justify-between gap-3">
+                                                            <a href="@url" target="_blank" class="text-indigo-600 hover:underline">
+                                                                @System.IO.Path.GetFileName(url)
+                                                            </a>
+                                                            <input type="hidden"
+                                                                   name="ExistingStkAsIsToBeFileUrls[@i]"
+                                                                   value="@url" />
+                                                        </li>
+                                                        i++;
+                                                    }
+                                                }
+                                            </ul>
+                                            <p class="mt-2 text-[11px] text-slate-500">
+                                                Kosongkan input file di bawah kalau tidak ingin mengganti.
+                                            </p>
+                                        </div>
+                                    }
+
+                                    <label class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+                                        <div class="flex items-center gap-3">
+                                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-200">
+                                                <i class="ri-file-list-3-line text-xl text-slate-600"></i>
+                                            </span>
+                                            <div>
+                                                <div class="text-sm font-medium text-slate-800">Pilih dokumen</div>
+                                                <div class="file-name text-xs text-slate-400">Bisa multiple file</div>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-slate-500">Browse</span>
+
+                                        <input asp-for="StkAsIsToBeFiles" type="file" multiple class="hidden" />
+                                    </label>
+
+                                    <p class="text-xs text-slate-400">
+                                        Upload STK (as-is & to-be) untuk rollout.
+                                    </p>
+                                    <span asp-validation-for="StkAsIsToBeFiles" class="text-xs text-red-600"></span>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- CHECKLIST -->
+                        <div class="border-y border-slate-100 bg-white px-8 py-4">
+                            <p class="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
+                                Checklist Readiness
+                            </p>
+                        </div>
+
+                        <div class="p-8 space-y-5">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                @ChecklistCard("Sudah join domain AD Pertamina", "Aplikasi/user sudah terintegrasi AD Pertamina.", Html.CheckBoxFor(m => m.IsJoinedDomainAdPertamina, new { @class = "h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" }))
+                                @ChecklistCard("Menggunakan ERP Pertamina", "Jika terkait proses bisnis ERP, pastikan align.", Html.CheckBoxFor(m => m.IsUsingErpPertamina, new { @class = "h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" }))
+                                @ChecklistCard("Required activation sudah diimplementasikan", "Semua requirement aktivasi sudah dipenuhi.", Html.CheckBoxFor(m => m.IsImplementedRequiredActivation, new { @class = "h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" }))
+                                @ChecklistCard("Ada koneksi ke Data Center", "Koneksi network / VPN / route sudah ready.", Html.CheckBoxFor(m => m.HasDataCenterConnection, new { @class = "h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" }))
+                                @ChecklistCard("Resource sudah tersedia", "Server, lisensi, akun, akses, dsb sudah aman.", Html.CheckBoxFor(m => m.HasRequiredResource, new { @class = "h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" }))
+
+                            </div>
+
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                <div class="flex items-start gap-3">
+                                    <i class="ri-information-line text-lg text-slate-500 mt-0.5"></i>
+                                    <p class="text-sm text-slate-600">
+                                        Checklist ini buat memastikan rollout lu gak “mentok” di teknis pas udah jalan.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FOOTER -->
+                        <div class="flex flex-col gap-4 border-t border-slate-100 bg-white px-8 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <a asp-action="UserIndex"
+                               class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700">
+                                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-[11px]">
+                                    ←
+                                </span>
+                                Kembali
+                            </a>
+
+                            <div class="flex items-center gap-3">
+                                    <button type="submit"
+                                        class="inline-flex items-center justify-center rounded-lg border border-indigo-600 bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:ring-offset-1 focus:ring-offset-slate-50 transition-all">
+                                    Update & Resubmit
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- SIDEBAR -->
+                <aside class="lg:col-span-4 space-y-4 lg:sticky lg:top-6 h-fit">
+
+                    <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">Catatan Reviewer</h2>
+                            <p class="mt-1 text-xs text-slate-500">Pakai ini sebagai checklist perbaikan sebelum resubmit.</p>
+                        </div>
+
+                        <div class="px-6 py-4">
+                            @if (Model?.Reviews != null && Model.Reviews.Any())
+                            {
+                                <div class="space-y-3">
+                                    @foreach (var rv in Model.Reviews.OrderByDescending(x => x.CreatedAt))
+                                    {
+                                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="text-sm font-semibold text-slate-800">
+                                                            @(string.IsNullOrWhiteSpace(rv.UserName) ? "Reviewer" : rv.UserName)
+                                                        </span>
+                                                        <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 border border-indigo-100">
+                                                            @rv.RoleReview
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="shrink-0 text-right text-[11px] text-slate-500">
+                                                    @rv.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                                                </div>
+                                            </div>
+
+                                            <p class="mt-3 text-sm text-slate-700">
+                                                @(string.IsNullOrWhiteSpace(rv.Catatan) ? "-" : rv.Catatan)
+                                            </p>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                                    Belum ada catatan review.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                </aside>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // ===== HASHTAG =====
+        (function () {
+            const badgesContainer = document.getElementById('hashtag-badges');
+            const input = document.getElementById('hashtag-input');
+            if (!badgesContainer || !input) return;
+
+            function reindexHiddenInputs() {
+                badgesContainer.querySelectorAll('input[type="hidden"]').forEach((inp, idx) => {
+                    inp.name = 'Hashtags[' + idx + ']';
+                });
+            }
+
+            function ensurePlaceholder() {
+                const hiddenInputs = badgesContainer.querySelectorAll('input[type="hidden"]');
+                if (hiddenInputs.length === 0 && !badgesContainer.querySelector('.empty-hashtag-placeholder')) {
+                    const span = document.createElement('span');
+                    span.className = 'text-xs text-slate-400 empty-hashtag-placeholder';
+                    span.textContent = 'Belum ada hashtag. Tambahin buat ngelompokkin RollOut lo.';
+                    badgesContainer.appendChild(span);
+                }
+            }
+
+            function createTagBadge(tag) {
+                tag = (tag || '').trim().replace(/^#+/, '');
+                if (!tag) return;
+
+                const exists = badgesContainer.querySelector('input[type="hidden"][value="' + tag + '"]');
+                if (exists) return;
+
+                badgesContainer.querySelector('.empty-hashtag-placeholder')?.remove();
+
+                const index = badgesContainer.querySelectorAll('input[type="hidden"]').length;
+                const span = document.createElement('span');
+                span.className = 'tag-badge inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100';
+                span.innerHTML =
+                    '<span>#' + tag + '</span>' +
+                    '<button type="button" class="tag-remove inline-flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 text-[10px] text-indigo-600" data-tag="' + tag + '">×</button>' +
+                    '<input type="hidden" name="Hashtags[' + index + ']" value="' + tag + '" />';
+
+                badgesContainer.appendChild(span);
+            }
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (input.value.trim()) {
+                        createTagBadge(input.value);
+                        input.value = '';
+                    }
+                }
+            });
+
+            badgesContainer.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target && target.classList.contains('tag-remove')) {
+                    target.closest('.tag-badge')?.remove();
+                    reindexHiddenInputs();
+                    ensurePlaceholder();
+                }
+            });
+
+            ensurePlaceholder();
+        })();
+
+        // ===== FILE INPUT LABEL (multiple aware + reset) =====
+        document.addEventListener("change", function (e) {
+            if (!(e.target instanceof HTMLInputElement)) return;
+            if (e.target.type !== "file") return;
+
+            const label = e.target.closest("label");
+            if (!label) return;
+
+            const nameEl = label.querySelector(".file-name");
+            if (!nameEl) return;
+
+            const files = e.target.files;
+            if (!files || files.length === 0) {
+                nameEl.textContent = "Bisa multiple file";
+                return;
+            }
+
+            nameEl.textContent = (files.length === 1)
+                ? files[0].name
+                : files.length + " file dipilih";
+        });
+    </script>
+}
+
+@functions {
+    private IHtmlContent ChecklistCard(string title, string desc, IHtmlContent checkbox)
+    {
+        var encTitle = HtmlEncoder.Default.Encode(title);
+        var encDesc  = HtmlEncoder.Default.Encode(desc);
+
+        var b = new HtmlContentBuilder();
+
+        b.AppendHtml(@"
+<div class='flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-4 hover:bg-slate-50 transition'>
+  <div class='flex items-start gap-3'>
+    <span class='inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-200'>
+      <i class='ri-checkbox-circle-line text-xl text-slate-500'></i>
+    </span>
+    <div class='space-y-1'>
+      <p class='text-sm font-semibold text-slate-900'>");
+        b.AppendHtml(encTitle);
+        b.AppendHtml(@"</p>
+      <p class='text-xs text-slate-500'>");
+        b.AppendHtml(encDesc);
+        b.AppendHtml(@"
+      </p>
+    </div>
+  </div>
+  <div class='pt-1'>");
+
+        b.AppendHtml(checkbox);
+
+        b.AppendHtml(@"
+  </div>
+</div>");
+
+        return b;
+    }
+}
