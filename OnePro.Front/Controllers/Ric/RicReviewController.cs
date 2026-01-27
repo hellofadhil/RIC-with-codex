@@ -14,40 +14,74 @@ namespace OnePro.Front.Controllers.Ric
         private const string ViewReviewIndex = "~/Views/Ric/Review/Index.cshtml";
         private const string ViewReviewForm = "~/Views/Ric/Review/Form.cshtml";
 
-        public RicReviewController(IRicService ricService, ILogger<RicReviewController> logger, IWebHostEnvironment env)
+        public RicReviewController(
+            IRicService ricService,
+            ILogger<RicReviewController> logger,
+            IWebHostEnvironment env
+        )
             : base(ricService, logger, env) { }
 
         [RoleRequired(
-            Role.BR_Pic, Role.BR_Member, Role.BR_Manager, Role.BR_VP,
-            Role.SARM_Pic, Role.SARM_Member, Role.SARM_Manager, Role.SARM_VP,
-            Role.ECS_Pic, Role.ECS_Member, Role.ECS_Manager, Role.ECS_VP
+            Role.BR_Pic,
+            Role.BR_Member,
+            Role.BR_Manager,
+            Role.BR_VP,
+            Role.SARM_Pic,
+            Role.SARM_Member,
+            Role.SARM_Manager,
+            Role.SARM_VP,
+            Role.ECS_Pic,
+            Role.ECS_Member,
+            Role.ECS_Manager,
+            Role.ECS_VP
         )]
         [HttpGet("Ric/Review")]
-        public async Task<IActionResult> ReviewIndex()
+        public async Task<IActionResult> ReviewIndex(string? q, string? status)
         {
-            if (!TryGetToken(out var token)) return RedirectToLogin();
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
 
             var userRole = HttpContext.Session.GetString("UserRole");
             // Logger.LogInformation("ReviewIndex accessed. UserRole from session: {UserRole}", userRole);
 
             ViewBag.UserRole = userRole;
 
-            var rics = await RicService.GetMyRicsAsync(token);
+            var rics = await RicService.GetMyRicsAsync(token, q, 50);
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                rics = rics.Where(x =>
+                        string.Equals(x.Status, status, StringComparison.OrdinalIgnoreCase)
+                    )
+                    .ToList();
+            }
+
+            rics = rics.Take(10).ToList();
             return View(ViewReviewIndex, rics);
         }
 
         [RoleRequired(
-            Role.BR_Pic, Role.BR_Member, Role.BR_Manager, Role.BR_VP,
-            Role.SARM_Pic, Role.SARM_Member, Role.SARM_Manager, Role.SARM_VP,
-            Role.ECS_Pic, Role.ECS_Member, Role.ECS_Manager, Role.ECS_VP
+            Role.BR_Pic,
+            Role.BR_Member,
+            Role.BR_Manager,
+            Role.BR_VP,
+            Role.SARM_Pic,
+            Role.SARM_Member,
+            Role.SARM_Manager,
+            Role.SARM_VP,
+            Role.ECS_Pic,
+            Role.ECS_Member,
+            Role.ECS_Manager,
+            Role.ECS_VP
         )]
         [HttpGet("Ric/Review/{id:guid}")]
         public async Task<IActionResult> ReviewEdit(Guid id)
         {
-            if (!TryGetToken(out var token)) return RedirectToLogin();
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
 
             var ric = await RicService.GetRicByIdAsync(id, token);
-            if (ric == null) return NotFound();
+            if (ric == null)
+                return NotFound();
 
             var vm = RicMapper.MapToEditViewModel(ric);
             vm.Id = ric.Id;
@@ -56,15 +90,29 @@ namespace OnePro.Front.Controllers.Ric
         }
 
         [RoleRequired(
-            Role.BR_Pic, Role.BR_Member, Role.BR_Manager, Role.BR_VP,
-            Role.SARM_Pic, Role.SARM_Member, Role.SARM_Manager, Role.SARM_VP,
-            Role.ECS_Pic, Role.ECS_Member, Role.ECS_Manager, Role.ECS_VP
+            Role.BR_Pic,
+            Role.BR_Member,
+            Role.BR_Manager,
+            Role.BR_VP,
+            Role.SARM_Pic,
+            Role.SARM_Member,
+            Role.SARM_Manager,
+            Role.SARM_VP,
+            Role.ECS_Pic,
+            Role.ECS_Member,
+            Role.ECS_Manager,
+            Role.ECS_VP
         )]
         [HttpPost("Ric/Review")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReviewForm(RicCreateViewModel model, string action, string? note)
+        public async Task<IActionResult> ReviewForm(
+            RicCreateViewModel model,
+            string action,
+            string? note
+        )
         {
-            if (!TryGetToken(out var token)) return RedirectToLogin();
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
 
             action = (action ?? "").Trim().ToLowerInvariant();
 
@@ -85,9 +133,18 @@ namespace OnePro.Front.Controllers.Ric
 
             if (action == "approve")
             {
-                var asIsUrls = await ResolveFileUrlsAsync(model.AsIsRasciFiles, model.ExistingAsIsFileUrls);
-                var toBeUrls = await ResolveFileUrlsAsync(model.ToBeProcessFiles, model.ExistingToBeFileUrls);
-                var expectedUrls = await ResolveFileUrlsAsync(model.ExpectedCompletionFiles, model.ExistingExpectedCompletionFileUrls);
+                var asIsUrls = await ResolveFileUrlsAsync(
+                    model.AsIsRasciFiles,
+                    model.ExistingAsIsFileUrls
+                );
+                var toBeUrls = await ResolveFileUrlsAsync(
+                    model.ToBeProcessFiles,
+                    model.ExistingToBeFileUrls
+                );
+                var expectedUrls = await ResolveFileUrlsAsync(
+                    model.ExpectedCompletionFiles,
+                    model.ExistingExpectedCompletionFileUrls
+                );
 
                 var req = new FormRicResubmitRequest
                 {
@@ -122,6 +179,5 @@ namespace OnePro.Front.Controllers.Ric
             ModelState.AddModelError("", "Action tidak valid.");
             return View(ViewReviewForm, model);
         }
-
     }
 }

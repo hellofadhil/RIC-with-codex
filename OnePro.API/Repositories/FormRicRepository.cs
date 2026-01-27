@@ -37,7 +37,11 @@ namespace OnePro.API.Repositories
             _context = context;
         }
 
-        public async Task<List<RicListItemResponse>> GetAllByGroupAsync(Guid groupId)
+        public async Task<List<RicListItemResponse>> GetAllByGroupAsync(
+            Guid groupId,
+            string? q = null,
+            int limit = 10
+        )
         {
             var query =
                 from r in _context.FormRics.AsNoTracking()
@@ -69,7 +73,8 @@ namespace OnePro.API.Repositories
                 query = query.Where(x => x.Ric.IdGroupUser == groupId);
             }
 
-            return await query
+            var items = await query
+                .OrderByDescending(x => x.Ric.UpdatedAt)
                 .Select(x => new RicListItemResponse
                 {
                     Id = x.Ric.Id,
@@ -81,6 +86,9 @@ namespace OnePro.API.Repositories
                     UpdatedAt = x.Ric.UpdatedAt,
                 })
                 .ToListAsync();
+
+            items = ApplySearch(items, q);
+            return items.Take(NormalizeLimit(limit)).ToList();
         }
 
         public async Task<FormRic?> GetByIdAsync(Guid id)
@@ -256,7 +264,9 @@ namespace OnePro.API.Repositories
 
         public async Task<List<RicListItemResponse>> GetApprovalQueueAsync(
             Guid groupId,
-            string role
+            string role,
+            string? q = null,
+            int limit = 10
         )
         {
             var query =
@@ -306,18 +316,68 @@ namespace OnePro.API.Repositories
                 // default: biarin sesuai status aja
             }
 
-            return await query
+            var items = await query
                 .OrderByDescending(x => x.Ric.UpdatedAt)
                 .Select(x => new RicListItemResponse
                 {
                     Id = x.Ric.Id,
                     Judul = x.Ric.Judul,
                     Permasalahan = x.Ric.Permasalahan,
+                    Hastag = x.Ric.Hastag,
                     UserName = x.User != null ? x.User.Name : null,
                     Status = x.Ric.Status.ToString(),
                     UpdatedAt = x.Ric.UpdatedAt,
                 })
                 .ToListAsync();
+
+            items = ApplySearch(items, q);
+            return items.Take(NormalizeLimit(limit)).ToList();
+        }
+
+        private static int NormalizeLimit(int limit)
+        {
+            if (limit <= 0)
+                return 10;
+            return Math.Min(limit, 100);
+        }
+
+        private static List<RicListItemResponse> ApplySearch(
+            List<RicListItemResponse> items,
+            string? q
+        )
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return items;
+
+            var needle = q.Trim();
+            if (needle.StartsWith("#", StringComparison.Ordinal))
+                needle = needle.Substring(1);
+
+            return items.Where(x => MatchesSearch(x, needle)).ToList();
+        }
+
+        private static bool MatchesSearch(RicListItemResponse item, string q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return true;
+
+            if (item.Id.ToString().Contains(q, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (!string.IsNullOrWhiteSpace(item.Judul)
+                && item.Judul.Contains(q, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (!string.IsNullOrWhiteSpace(item.UserName)
+                && item.UserName.Contains(q, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (item.Hastag?.Any(h =>
+                    !string.IsNullOrWhiteSpace(h)
+                    && h.Contains(q, StringComparison.OrdinalIgnoreCase)) == true)
+                return true;
+
+            return false;
         }
 
         #region Private Helper

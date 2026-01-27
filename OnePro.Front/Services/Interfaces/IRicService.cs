@@ -5,8 +5,8 @@ namespace OnePro.Front.Services.Interfaces
 {
     public interface IRicService
     {
-        Task<List<RicItemResponse>> GetMyRicsAsync(string token);
-        Task<List<RicItemResponse>> GetApprovalQueueAsync(string token);
+        Task<List<RicItemResponse>> GetMyRicsAsync(string token, string? q = null, int? limit = null);
+        Task<List<RicItemResponse>> GetApprovalQueueAsync(string token, string? q = null, int? limit = null);
         Task<RicDetailResponse?> GetRicByIdAsync(Guid id, string token);
 
         Task CreateRicAsync(FormRicCreateRequest request, string token);

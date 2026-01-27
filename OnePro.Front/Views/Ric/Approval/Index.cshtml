@@ -9,6 +9,8 @@
     Layout = "_LayoutDashboard";
 
     var total = Model?.Count ?? 0;
+    var q = Context.Request.Query["q"].ToString();
+    var statusFilter = Context.Request.Query["status"].ToString();
 }
 
 <div class="max-w-6xl mx-auto mt-6">
@@ -33,14 +35,14 @@
 
     <!-- TOOLBAR -->
     <div class="mt-6 bg-white rounded-2xl border border-gray-200/80 p-5">
-        <div class="flex flex-col md:flex-row md:items-end gap-4">
-
+        <form method="get" class="flex flex-col md:flex-row md:items-end gap-4">
             <div class="flex-1">
                 <label class="text-xs text-gray-500">Search (judul / user / id)</label>
                 <div class="relative mt-1">
                     <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input id="ricSearch"
+                    <input name="q"
                            type="text"
+                           value="@q"
                            placeholder="Cari judul, user, atau ID..."
                            class="@InputBase("pl-10")" />
                 </div>
@@ -51,30 +53,34 @@
                 <div class="relative mt-1">
                     <i class="ri-filter-3-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
 
-                    <select id="statusFilter"
+                    <select name="status"
                             class="w-full appearance-none pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 bg-white text-sm
                                    focus:outline-none focus:ring-2 focus:ring-gray-900/10 hover:border-gray-300 transition">
-                        <option value="">All</option>
-                        <option value="@StatusRic.Approval_Manager_User">@StatusRic.Approval_Manager_User</option>
-                        <option value="@StatusRic.Approval_VP_User">@StatusRic.Approval_VP_User</option>
-                        <option value="@StatusRic.Approval_Manager_BR">@StatusRic.Approval_Manager_BR</option>
-                        <option value="@StatusRic.Approval_Manager_SARM">@StatusRic.Approval_Manager_SARM</option>
-                        <option value="@StatusRic.Approval_VP_SARM">@StatusRic.Approval_VP_SARM</option>
-                        <option value="@StatusRic.Approval_Manager_ECS">@StatusRic.Approval_Manager_ECS</option>
-                        <option value="@StatusRic.Approval_VP_ECS">@StatusRic.Approval_VP_ECS</option>
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(statusFilter) ? "selected" : null)">All</option>
+                        <option value="@StatusRic.Approval_Manager_User" selected="@(statusFilter == StatusRic.Approval_Manager_User.ToString() ? "selected" : null)">@StatusRic.Approval_Manager_User</option>
+                        <option value="@StatusRic.Approval_VP_User" selected="@(statusFilter == StatusRic.Approval_VP_User.ToString() ? "selected" : null)">@StatusRic.Approval_VP_User</option>
+                        <option value="@StatusRic.Approval_Manager_BR" selected="@(statusFilter == StatusRic.Approval_Manager_BR.ToString() ? "selected" : null)">@StatusRic.Approval_Manager_BR</option>
+                        <option value="@StatusRic.Approval_Manager_SARM" selected="@(statusFilter == StatusRic.Approval_Manager_SARM.ToString() ? "selected" : null)">@StatusRic.Approval_Manager_SARM</option>
+                        <option value="@StatusRic.Approval_VP_SARM" selected="@(statusFilter == StatusRic.Approval_VP_SARM.ToString() ? "selected" : null)">@StatusRic.Approval_VP_SARM</option>
+                        <option value="@StatusRic.Approval_Manager_ECS" selected="@(statusFilter == StatusRic.Approval_Manager_ECS.ToString() ? "selected" : null)">@StatusRic.Approval_Manager_ECS</option>
+                        <option value="@StatusRic.Approval_VP_ECS" selected="@(statusFilter == StatusRic.Approval_VP_ECS.ToString() ? "selected" : null)">@StatusRic.Approval_VP_ECS</option>
                     </select>
 
                     <i class="ri-arrow-down-s-line absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                 </div>
             </div>
 
-            <button id="clearFilter"
-                    type="button"
-                    class="@BtnGhost()">
+            <button type="submit" class="@BtnPrimary()">
+                <i class="ri-search-line"></i>
+                Search
+            </button>
+
+            <a asp-action="ApprovalIndex" class="@BtnGhost()">
                 <i class="ri-refresh-line"></i>
                 Reset
-            </button>
-        </div>
+            </a>
+        </form>
+        <div class="mt-3 text-xs text-gray-500">Menampilkan maksimal 10 data.</div>
     </div>
 
     <!-- TABLE -->
@@ -99,9 +105,7 @@
                         {
                             var status = item.Status ?? "";
 
-                            <tr class="hover:bg-gray-50 transition"
-                                data-status="@status"
-                                data-search="@BuildSearch(item)">
+                            <tr class="hover:bg-gray-50 transition">
 
                                 <td class="px-6 py-4 font-mono text-xs text-gray-500">
                                     <div class="truncate max-w-[7rem]" title="@item.Id">@item.Id</div>
@@ -167,60 +171,13 @@
         <div class="px-6 py-4 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
             <span class="inline-flex items-center gap-2">
                 <i class="ri-information-line"></i>
-                Gunakan search & filter untuk mempercepat pencarian.
+                Gunakan search untuk mempercepat pencarian.
             </span>
 
-            <span class="font-medium">
-                Showing <span id="shownCount">@total</span> of @total
-            </span>
+            <span class="font-medium">Showing @total</span>
         </div>
     </div>
 </div>
-
-@section Scripts {
-<script>
-(function () {
-  const searchInput = document.getElementById('ricSearch');
-  const statusFilter = document.getElementById('statusFilter');
-  const clearBtn = document.getElementById('clearFilter');
-  const tbody = document.getElementById('ricTableBody');
-  const shownCount = document.getElementById('shownCount');
-
-  if (!searchInput || !statusFilter || !clearBtn || !tbody) return;
-
-  const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
-
-  function applyFilter() {
-    const q = (searchInput.value || '').trim().toLowerCase();
-    const s = (statusFilter.value || '').trim();
-
-    let visible = 0;
-
-    rows.forEach(r => {
-      const hay = (r.getAttribute('data-search') || '');
-      const st = (r.getAttribute('data-status') || '');
-      const show = (!q || hay.includes(q)) && (!s || st === s);
-
-      r.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-
-    if (shownCount) shownCount.textContent = visible;
-  }
-
-  searchInput.addEventListener('input', applyFilter);
-  statusFilter.addEventListener('change', applyFilter);
-  clearBtn.addEventListener('click', () => {
-    searchInput.value = '';
-    statusFilter.value = '';
-    applyFilter();
-  });
-
-  applyFilter();
-})();
-</script>
-}
-
 @functions {
     private string Trunc(string? text, int max)
     {
@@ -228,14 +185,11 @@
         return text.Length > max ? text.Substring(0, max) + "..." : text;
     }
 
-    private string BuildSearch(RicItemResponse item)
-    {
-        var parts = $"{item.Id} {item.Judul} {item.UserName} {item.Status}";
-        return parts.ToLowerInvariant();
-    }
-
     private string InputBase(string extra = "")
         => $"w-full {extra} pr-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900/10 text-sm";
+
+    private string BtnPrimary()
+        => "inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white text-sm font-medium transition";
 
     private string BtnGhost()
         => "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition";

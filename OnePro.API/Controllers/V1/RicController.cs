@@ -85,10 +85,10 @@ public class RicController : ControllerBase
     // QUERIES
     // =========================
     [HttpGet("my")]
-    public async Task<IActionResult> GetMyGroupRics()
+    public async Task<IActionResult> GetMyGroupRics([FromQuery] string? q, [FromQuery] int? limit)
     {
         var groupId = GetGuidClaim("groupId");
-        var data = await _repository.GetAllByGroupAsync(groupId);
+        var data = await _repository.GetAllByGroupAsync(groupId, q, limit ?? 10);
         return Ok(data);
     }
 
@@ -433,7 +433,7 @@ public class RicController : ControllerBase
         Role.ECS_VP
     )]
     [HttpGet("approval")]
-    public async Task<IActionResult> GetApprovalQueue()
+    public async Task<IActionResult> GetApprovalQueue([FromQuery] string? q, [FromQuery] int? limit)
     {
         var groupId = GetGuidClaim("groupId");
         var roleStr = GetStringClaim("role");
@@ -441,7 +441,7 @@ public class RicController : ControllerBase
         if (!Enum.TryParse(roleStr, out Role role))
             return Forbid("Invalid role.");
 
-        var data = await _repository.GetApprovalQueueAsync(groupId, roleStr);
+        var data = await _repository.GetApprovalQueueAsync(groupId, roleStr, q, limit ?? 10);
         return Ok(data);
     }
 }

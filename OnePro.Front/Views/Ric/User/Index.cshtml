@@ -7,6 +7,8 @@
     Layout = "_LayoutDashboard";
 
     var total = Model?.Count ?? 0;
+    var q = Context.Request.Query["q"].ToString();
+    var statusFilter = Context.Request.Query["status"].ToString();
 }
 
 <div class="max-w-6xl mx-auto mt-6">
@@ -31,14 +33,14 @@
 
     <!-- TOOLBAR -->
     <div class="mt-6 bg-white rounded-2xl border border-gray-200/80 p-5">
-        <div class="flex flex-col md:flex-row md:items-end gap-4">
-
+        <form method="get" class="flex flex-col md:flex-row md:items-end gap-4">
             <div class="flex-1">
                 <label class="text-xs text-gray-500">Search</label>
                 <div class="relative mt-1">
                     <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input id="ricSearch"
+                    <input name="q"
                            type="text"
+                           value="@q"
                            placeholder="Cari judul, ID, atau #hashtag..."
                            class="@InputBase("pl-10")" />
                 </div>
@@ -49,28 +51,32 @@
                 <div class="relative mt-1">
                     <i class="ri-filter-3-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
 
-                    <select id="statusFilter"
+                    <select name="status"
                             class="w-full appearance-none pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 bg-white text-sm
                                    focus:outline-none focus:ring-2 focus:ring-gray-900/10 hover:border-gray-300 transition">
-                        <option value="">All Status</option>
-                        <option value="@S.Draft">Draft</option>
-                        <option value="@S.Return">Return BR To User</option>
-                        <option value="@S.Submitted">Submitted</option>
-                        <option value="@S.Approved">Approved</option>
-                        <option value="@S.Rejected">Rejected</option>
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(statusFilter) ? "selected" : null)">All Status</option>
+                        <option value="@S.Draft" selected="@(statusFilter == S.Draft ? "selected" : null)">Draft</option>
+                        <option value="@S.Return" selected="@(statusFilter == S.Return ? "selected" : null)">Return BR To User</option>
+                        <option value="@S.Submitted" selected="@(statusFilter == S.Submitted ? "selected" : null)">Submitted</option>
+                        <option value="@S.Approved" selected="@(statusFilter == S.Approved ? "selected" : null)">Approved</option>
+                        <option value="@S.Rejected" selected="@(statusFilter == S.Rejected ? "selected" : null)">Rejected</option>
                     </select>
 
                     <i class="ri-arrow-down-s-line absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                 </div>
             </div>
 
-            <button id="clearFilter"
-                    type="button"
-                    class="@BtnGhost()">
+            <button type="submit" class="@BtnPrimary()">
+                <i class="ri-search-line"></i>
+                Search
+            </button>
+
+            <a asp-action="UserIndex" class="@BtnGhost()">
                 <i class="ri-refresh-line"></i>
                 Reset
-            </button>
-        </div>
+            </a>
+        </form>
+        <div class="mt-3 text-xs text-gray-500">Menampilkan maksimal 10 data.</div>
     </div>
 
     <!-- TABLE -->
@@ -94,9 +100,7 @@
                         foreach (var item in Model)
                         {
                             var status = item.Status ?? "";
-                            <tr class="hover:bg-gray-50 transition"
-                                data-status="@status"
-                                data-search="@BuildSearch(item)">
+                            <tr class="hover:bg-gray-50 transition">
                                 <td class="px-6 py-4 font-mono text-xs text-gray-500">
                                     <div class="truncate max-w-[7rem]" title="@item.Id">@item.Id</div>
                                 </td>
@@ -200,57 +204,11 @@
         </div>
 
         <div class="px-6 py-4 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
-            <span>Gunakan search & filter untuk mempercepat pencarian.</span>
-            <span class="font-medium">
-                Showing <span id="shownCount">@total</span> of @total
-            </span>
+            <span>Gunakan search untuk mempercepat pencarian.</span>
+            <span class="font-medium">Showing @total</span>
         </div>
     </div>
 </div>
-
-@section Scripts {
-<script>
-(function () {
-  const searchInput = document.getElementById('ricSearch');
-  const statusFilter = document.getElementById('statusFilter');
-  const clearBtn = document.getElementById('clearFilter');
-  const tbody = document.getElementById('ricTableBody');
-  const shownCount = document.getElementById('shownCount');
-
-  if (!searchInput || !statusFilter || !clearBtn || !tbody) return;
-
-  const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
-
-  function applyFilter() {
-    const q = (searchInput.value || '').trim().toLowerCase();
-    const s = (statusFilter.value || '').trim();
-
-    let visible = 0;
-
-    rows.forEach(r => {
-      const hay = (r.getAttribute('data-search') || '');
-      const st = (r.getAttribute('data-status') || '');
-      const show = (!q || hay.includes(q)) && (!s || st === s);
-
-      r.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-
-    if (shownCount) shownCount.textContent = visible;
-  }
-
-  searchInput.addEventListener('input', applyFilter);
-  statusFilter.addEventListener('change', applyFilter);
-  clearBtn.addEventListener('click', () => {
-    searchInput.value = '';
-    statusFilter.value = '';
-    applyFilter();
-  });
-
-  applyFilter();
-})();
-</script>
-}
 
 @functions {
     // Status constants biar gak typo di mana-mana
@@ -267,13 +225,6 @@
     {
         if (string.IsNullOrWhiteSpace(text)) return "-";
         return text.Length > max ? text.Substring(0, max) + "..." : text;
-    }
-
-    private string BuildSearch(RicItemResponse item)
-    {
-        var hashtags = item.Hastag?.Count > 0 ? string.Join(" ", item.Hastag.Select(x => $"#{x}")) : "";
-        var parts = $"{item.Id} {item.Judul} {item.UserName} {item.Status} {hashtags}";
-        return parts.ToLowerInvariant();
     }
 
     private string InputBase(string extra = "")

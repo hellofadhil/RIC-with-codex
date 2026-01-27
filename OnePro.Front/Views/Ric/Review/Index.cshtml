@@ -10,6 +10,8 @@
 
     var userRole = ViewBag.UserRole as string ?? "";
     var total = Model?.Count ?? 0;
+    var q = Context.Request.Query["q"].ToString();
+    var statusFilter = Context.Request.Query["status"].ToString();
     var draftCount = Model?.Count(x => x.Status == StatusRic.Draft.ToString()) ?? 0;
     var inReviewCount =
         (Model?.Count(x =>
@@ -27,13 +29,14 @@
 
     @* TOOLBAR *@
     <div class="mt-5 bg-white border border-gray-200 shadow-lg rounded-3xl p-4 md:p-5">
-        <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+        <form method="get" class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
             <div class="flex-1">
                 <label class="text-xs text-gray-500">Search (judul / user / id)</label>
                 <div class="mt-1 relative">
                     <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input id="ricSearch"
+                    <input name="q"
                            type="text"
+                           value="@q"
                            placeholder="Ketik buat cari..."
                            class="w-full pl-10 pr-3 py-2.5 rounded-2xl border border-gray-200
                                   focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-300
@@ -43,30 +46,35 @@
 
             <div class="w-full md:w-56">
                 <label class="text-xs text-gray-500">Filter Status</label>
-                <select id="statusFilter"
+                <select name="status"
                         class="mt-1 w-full px-3 py-2.5 rounded-2xl border border-gray-200
                                focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-300
                                text-sm">
-                    <option value="">All</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Submitted_To_BR">Submitted To BR</option>
-                    <option value="Review_BR">Review BR</option>
-                    <option value="Review_SARM">Review SARM</option>
-                    <option value="Review_ECS">Review ECS</option>
-                    <option value="Done">Done</option>
+                    <option value="" selected="@(string.IsNullOrWhiteSpace(statusFilter) ? "selected" : null)">All</option>
+                    <option value="Draft" selected="@(statusFilter == "Draft" ? "selected" : null)">Draft</option>
+                    <option value="Submitted_To_BR" selected="@(statusFilter == "Submitted_To_BR" ? "selected" : null)">Submitted To BR</option>
+                    <option value="Review_BR" selected="@(statusFilter == "Review_BR" ? "selected" : null)">Review BR</option>
+                    <option value="Review_SARM" selected="@(statusFilter == "Review_SARM" ? "selected" : null)">Review SARM</option>
+                    <option value="Review_ECS" selected="@(statusFilter == "Review_ECS" ? "selected" : null)">Review ECS</option>
+                    <option value="Done" selected="@(statusFilter == "Done" ? "selected" : null)">Done</option>
                 </select>
             </div>
 
-            <div class="md:self-end">
-                <button id="clearFilter"
-                        type="button"
-                        class="w-full md:w-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl
-                               border border-gray-200 hover:bg-gray-50 text-sm font-medium transition">
-                    <i class="ri-refresh-line"></i>
-                    Reset
-                </button>
-            </div>
-        </div>
+            <button type="submit"
+                    class="w-full md:w-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl
+                           bg-red-700 text-white hover:bg-red-800 text-sm font-medium transition">
+                <i class="ri-search-line"></i>
+                Search
+            </button>
+
+            <a asp-action="ReviewIndex"
+               class="w-full md:w-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl
+                      border border-gray-200 hover:bg-gray-50 text-sm font-medium transition">
+                <i class="ri-refresh-line"></i>
+                Reset
+            </a>
+        </form>
+        <div class="mt-3 text-xs text-gray-500">Menampilkan maksimal 10 data.</div>
     </div>
 
     @* TABLE *@
@@ -89,9 +97,7 @@
                     {
                         foreach (var item in Model)
                         {
-                            <tr class="hover:bg-gray-50/80 transition-colors duration-150"
-                                data-status="@item.Status"
-                                data-search="@($"{item.Id} {item.Judul} {item.UserName} {item.Status}").ToLower()">
+                            <tr class="hover:bg-gray-50/80 transition-colors duration-150">
                                 <td class="px-5 py-4 text-xs text-gray-500 font-mono">
                                     <div class="truncate max-w-[7rem]" title="@item.Id">@item.Id</div>
                                 </td>
@@ -249,61 +255,12 @@
         <div class="px-5 py-4 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
             <div class="inline-flex items-center gap-2">
                 <i class="ri-information-line"></i>
-                Tip: pakai Search + Filter biar cepet nemu RIC.
+                Tip: pakai Search biar cepet nemu RIC.
             </div>
-            <div class="font-medium">
-                Showing <span id="shownCount">@total</span> of @total
-            </div>
+            <div class="font-medium">Showing @total</div>
         </div>
     </div>
 </div>
-
-@section Scripts {
-<script>
-    (function () {
-        const searchInput = document.getElementById('ricSearch');
-        const statusFilter = document.getElementById('statusFilter');
-        const clearBtn = document.getElementById('clearFilter');
-        const tbody = document.getElementById('ricTableBody');
-        const shownCount = document.getElementById('shownCount');
-
-        if (!searchInput || !statusFilter || !clearBtn || !tbody) return;
-
-        const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
-
-        function applyFilter() {
-            const q = (searchInput.value || '').trim().toLowerCase();
-            const s = (statusFilter.value || '').trim();
-
-            let visible = 0;
-
-            rows.forEach(r => {
-                const hay = r.getAttribute('data-search') || '';
-                const st = r.getAttribute('data-status') || '';
-                const okQ = !q || hay.includes(q);
-                const okS = !s || st === s;
-
-                const show = okQ && okS;
-                r.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
-
-            if (shownCount) shownCount.textContent = visible;
-        }
-
-        searchInput.addEventListener('input', applyFilter);
-        statusFilter.addEventListener('change', applyFilter);
-        clearBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            statusFilter.value = '';
-            applyFilter();
-        });
-
-        applyFilter();
-    })();
-</script>
-}
-
 @functions {
     private string GetStatusBadgeClass(string status)
     {

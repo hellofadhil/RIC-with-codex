@@ -28,12 +28,21 @@ namespace OnePro.Front.Controllers.Ric
 
         [RoleRequired(Role.User_Member, Role.User_Pic, Role.User_Manager, Role.User_VP)]
         [HttpGet("Ric/User")]
-        public async Task<IActionResult> UserIndex()
+        public async Task<IActionResult> UserIndex(string? q, string? status)
         {
             if (!TryGetToken(out var token))
                 return RedirectToLogin();
 
-            var rics = await RicService.GetMyRicsAsync(token);
+            var rics = await RicService.GetMyRicsAsync(token, q, 50);
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                rics = rics.Where(x =>
+                        string.Equals(x.Status, status, StringComparison.OrdinalIgnoreCase)
+                    )
+                    .ToList();
+            }
+
+            rics = rics.Take(10).ToList();
             return View(ViewUserIndex, rics);
         }
 
@@ -259,12 +268,20 @@ namespace OnePro.Front.Controllers.Ric
             Role.ECS_VP
         )]
         [HttpGet("Ric/Approval")]
-        public async Task<IActionResult> ApprovalIndex()
+        public async Task<IActionResult> ApprovalIndex(string? q, string? status)
         {
             if (!TryGetToken(out var token))
                 return RedirectToLogin();
 
-            var approvalRics = await RicService.GetApprovalQueueAsync(token);
+            var approvalRics = await RicService.GetApprovalQueueAsync(token, q, 50);
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                approvalRics = approvalRics
+                    .Where(x => string.Equals(x.Status, status, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            approvalRics = approvalRics.Take(10).ToList();
             return View(ViewUserApprovalIndex, approvalRics);
         }
 

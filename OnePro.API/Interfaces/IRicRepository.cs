@@ -6,8 +6,13 @@ namespace OnePro.API.Interfaces
 {
     public interface IRicRepository
     {
-        Task<List<RicListItemResponse>> GetAllByGroupAsync(Guid groupId);
-        Task<List<RicListItemResponse>> GetApprovalQueueAsync(Guid groupId, string role);
+        Task<List<RicListItemResponse>> GetAllByGroupAsync(Guid groupId, string? q = null, int limit = 10);
+        Task<List<RicListItemResponse>> GetApprovalQueueAsync(
+            Guid groupId,
+            string role,
+            string? q = null,
+            int limit = 10
+        );
         Task<FormRic?> GetByIdAsync(Guid id);
         Task<FormRicDetailResponse?> GetDetailByIdAsync(Guid id);
 

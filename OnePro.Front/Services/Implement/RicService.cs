@@ -16,9 +16,20 @@ namespace OnePro.Front.Services.Implement
             _logger = logger;
         }
 
-        public async Task<List<RicItemResponse>> GetMyRicsAsync(string token)
+        public async Task<List<RicItemResponse>> GetMyRicsAsync(
+            string token,
+            string? q = null,
+            int? limit = null
+        )
         {
             var apiUrl = $"{_config["ApiUrl"]}/api/v1/Ric/my";
+            var qs = new List<string>();
+            if (!string.IsNullOrWhiteSpace(q))
+                qs.Add($"q={Uri.EscapeDataString(q)}");
+            if (limit.HasValue)
+                qs.Add($"limit={limit.Value}");
+            if (qs.Count > 0)
+                apiUrl += "?" + string.Join("&", qs);
 
             var client = new RestClient(apiUrl);
             var request = new RestRequest("", Method.Get);
@@ -37,9 +48,20 @@ namespace OnePro.Front.Services.Implement
             return result;
         }
 
-        public async Task<List<RicItemResponse>> GetApprovalQueueAsync(string token)
+        public async Task<List<RicItemResponse>> GetApprovalQueueAsync(
+            string token,
+            string? q = null,
+            int? limit = null
+        )
         {
             var apiUrl = $"{_config["ApiUrl"]}/api/v1/Ric/approval";
+            var qs = new List<string>();
+            if (!string.IsNullOrWhiteSpace(q))
+                qs.Add($"q={Uri.EscapeDataString(q)}");
+            if (limit.HasValue)
+                qs.Add($"limit={limit.Value}");
+            if (qs.Count > 0)
+                apiUrl += "?" + string.Join("&", qs);
 
             var client = new RestClient(apiUrl);
             var request = new RestRequest("", Method.Get);
