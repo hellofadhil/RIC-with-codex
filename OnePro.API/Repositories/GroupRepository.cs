@@ -52,6 +52,11 @@ namespace OnePro.API.Repositories
             };
         }
 
+        public async Task<Core.Models.Entities.Group?> GetGroupByIdAsync(Guid groupId)
+        {
+            return await _context.Groups!.FirstOrDefaultAsync(g => g.Id == groupId);
+        }
+
         public async Task<Core.Models.Entities.User?> GetUserByIdAsync(Guid userId)
         {
             return await _context.Users!.FirstOrDefaultAsync(u => u.Id == userId);
@@ -65,6 +70,23 @@ namespace OnePro.API.Repositories
         public async Task<bool> CreateGroupAsync(Core.Models.Entities.Group group)
         {
             _context.Groups!.Add(group);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<int> CountMembersAsync(Guid groupId)
+        {
+            return await _context.Users!.CountAsync(u => u.IdGroup == groupId);
+        }
+
+        public async Task<bool> UpdateGroupAsync(Core.Models.Entities.Group group)
+        {
+            _context.Groups!.Update(group);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteGroupAsync(Core.Models.Entities.Group group)
+        {
+            _context.Groups!.Remove(group);
             return await _context.SaveChangesAsync() > 0;
         }
 

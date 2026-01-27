@@ -3,12 +3,31 @@
 
     // ===== Session =====
     var userRole = Context.Session.GetString("UserRole") ?? "";
-    var name = Context.Session.GetString("UserName") ?? "User";
+    var name = Context.Session.GetString("UserName") ?? "";
     var email = Context.Session.GetString("UserEmail") ?? "";
+    var token = Context.Session.GetString("JwtToken") ?? "";
 
-    var initials = name.Length > 1
-        ? $"{char.ToUpper(name[0])}{char.ToUpper(name[1])}"
-        : $"{char.ToUpper(name[0])}";
+    if ((string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(email)) && !string.IsNullOrWhiteSpace(token))
+    {
+        try
+        {
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token);
+            if (string.IsNullOrWhiteSpace(name))
+                name = jwt.Claims.FirstOrDefault(c => c.Type == "name")?.Value ?? "";
+            if (string.IsNullOrWhiteSpace(email))
+                email = jwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? "";
+        }
+        catch
+        {
+            // ignore fallback failures
+        }
+    }
+
+    var safeName = string.IsNullOrWhiteSpace(name) ? "User" : name.Trim();
+    var initials = safeName.Length > 1
+        ? $"{char.ToUpper(safeName[0])}{char.ToUpper(safeName[1])}"
+        : $"{char.ToUpper(safeName[0])}";
 
     // ===== Path helpers =====
     var path = (Context.Request.Path.Value ?? "").ToLowerInvariant();

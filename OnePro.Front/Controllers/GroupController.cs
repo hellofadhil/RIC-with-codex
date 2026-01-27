@@ -63,6 +63,47 @@ namespace OnePro.Front.Controllers
         [RoleRequired(Role.User_Pic, Role.BR_Pic, Role.SARM_Pic, Role.ECS_Pic)]
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateGroup(UpdateGroupRequest request)
+        {
+            var token = HttpContext.Session.GetString("JwtToken");
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Auth");
+
+            await _groupService.UpdateGroupAsync(token, request);
+            return RedirectToAction("Index");
+        }
+
+        [RoleRequired(Role.User_Pic)]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteGroup()
+        {
+            var token = HttpContext.Session.GetString("JwtToken");
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Auth");
+
+            var result = await _groupService.DeleteGroupAsync(token);
+            if (result == null)
+                return RedirectToAction("Index");
+
+            HttpContext.Session.SetString("JwtToken", result.Token);
+            HttpContext.Session.SetString("UserName", result.User.Name ?? "");
+            HttpContext.Session.SetString("UserEmail", result.User.Email ?? "");
+            HttpContext.Session.SetString("UserRole", result.User.RoleName ?? "");
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpGet]
+        [ActionName("DeleteGroup")]
+        public IActionResult DeleteGroupPage()
+        {
+            return RedirectToAction("Index");
+        }
+
+        [RoleRequired(Role.User_Pic, Role.BR_Pic, Role.SARM_Pic, Role.ECS_Pic)]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Invite(AddGroupMemberRequest request)
         {
             var token = HttpContext.Session.GetString("JwtToken");

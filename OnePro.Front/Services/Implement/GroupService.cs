@@ -51,6 +51,37 @@ namespace OnePro.Front.Services.Implement
             return JsonConvert.DeserializeObject<GroupCreateResponse>(response.Content!);
         }
 
+        public async Task<GroupResponse?> UpdateGroupAsync(string token, UpdateGroupRequest request)
+        {
+            string apiUrl = $"{_config["ApiUrl"]}/api/Group/my";
+
+            var client = new RestClient(apiUrl);
+            var httpRequest = new RestRequest("", Method.Put);
+            httpRequest.AddHeader("Authorization", $"Bearer {token}");
+            httpRequest.AddJsonBody(request);
+
+            var response = await client.ExecuteAsync(httpRequest);
+            if (!response.IsSuccessful)
+                return null;
+
+            return JsonConvert.DeserializeObject<GroupResponse>(response.Content!);
+        }
+
+        public async Task<GroupCreateResponse?> DeleteGroupAsync(string token)
+        {
+            string apiUrl = $"{_config["ApiUrl"]}/api/Group/my";
+
+            var client = new RestClient(apiUrl);
+            var httpRequest = new RestRequest("", Method.Delete);
+            httpRequest.AddHeader("Authorization", $"Bearer {token}");
+
+            var response = await client.ExecuteAsync(httpRequest);
+            if (!response.IsSuccessful)
+                return null;
+
+            return JsonConvert.DeserializeObject<GroupCreateResponse>(response.Content!);
+        }
+
         public async Task<bool> AddMemberAsync(string token, AddGroupMemberRequest request)
         {
             string apiUrl = $"{_config["ApiUrl"]}/api/Group/members";

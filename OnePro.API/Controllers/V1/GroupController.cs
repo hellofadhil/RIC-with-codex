@@ -190,6 +190,30 @@ namespace OnePro.API.Controllers.V1
         }
 
         // ============================================================
+        // UPDATE GROUP (PIC only)
+        // ============================================================
+        [HttpPut("my")]
+        [RoleRequired(Role.User_Pic, Role.BR_Pic, Role.SARM_Pic, Role.ECS_Pic)]
+        public async Task<IActionResult> UpdateMyGroup([FromBody] UpdateGroupRequest req)
+        {
+            if (!TryGetGuidClaim(User, "groupId", out var groupId))
+                return BadRequest("User does not belong to any group.");
+
+            if (string.IsNullOrWhiteSpace(req.NamaDivisi) || string.IsNullOrWhiteSpace(req.NamaPerusahaan))
+                return BadRequest("Nama divisi dan perusahaan wajib diisi.");
+
+            var group = await _repo.GetGroupByIdAsync(groupId);
+            if (group == null)
+                return NotFound("Group not found.");
+
+            group.NamaDivisi = req.NamaDivisi.Trim();
+            group.NamaPerusahaan = req.NamaPerusahaan.Trim();
+
+            var ok = await _repo.UpdateGroupAsync(group);
+            return ok ? Ok(group) : StatusCode(500, "Failed to update group.");
+        }
+
+        // ============================================================
         // ADD MEMBER (PIC only)
         // ============================================================
         [HttpPost("members")]
@@ -210,27 +234,20 @@ namespace OnePro.API.Controllers.V1
             if (!RoleAllowedForGroup(req.Role, groupId))
                 return BadRequest("Role is not allowed for this group.");
 
-            if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Name))
-                return BadRequest("Name and Email are required.");
+            if (string.IsNullOrWhiteSpace(req.Email))
+                return BadRequest("Email is required.");
 
-            var exists = await _repo.GetUserByEmailAsync(req.Email);
-            if (exists != null)
-                return BadRequest("Email already exists.");
+            var user = await _repo.GetUserByEmailAsync(req.Email.Trim());
+            if (user == null)
+                return BadRequest("Email not found in system.");
 
-            var password = string.IsNullOrWhiteSpace(req.Password) ? "Pertamina123!" : req.Password;
+            if (user.IdGroup.HasValue && user.IdGroup.Value != Guid.Empty)
+                return BadRequest("User already belongs to another group.");
 
-            var user = new Core.Models.Entities.User
-            {
-                Id = Guid.NewGuid(),
-                Email = req.Email.Trim(),
-                Name = req.Name.Trim(),
-                Position = req.Position?.Trim() ?? "",
-                IdGroup = groupId,
-                Role = req.Role,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            };
+            user.IdGroup = groupId;
+            user.Role = req.Role;
 
-            var ok = await _repo.AddMemberAsync(user);
+            var ok = await _repo.UpdateMemberAsync(user);
             if (!ok)
                 return StatusCode(500, "Failed to add member.");
 
@@ -301,6 +318,47 @@ namespace OnePro.API.Controllers.V1
 
             var ok = await _repo.DeleteMemberAsync(user);
             return ok ? NoContent() : StatusCode(500, "Failed to delete member.");
+        }
+
+        // ============================================================
+        // DELETE GROUP (User_Pic only, no other members)
+        // ============================================================
+        [HttpDelete("my")]
+        [RoleRequired(Role.User_Pic)]
+        public async Task<IActionResult> DeleteMyGroup()
+        {
+            if (!TryGetGuidClaim(User, "groupId", out var groupId))
+                return BadRequest("User does not belong to any group.");
+
+            var userId = GetGuidClaim("id");
+            var role = GetRoleClaim();
+            if (role != Role.User_Pic)
+                return Forbid();
+
+            var memberCount = await _repo.CountMembersAsync(groupId);
+            if (memberCount > 1)
+                return BadRequest("Group still has members.");
+
+            var group = await _repo.GetGroupByIdAsync(groupId);
+            if (group == null)
+                return NotFound("Group not found.");
+
+            var user = await _repo.GetUserByIdAsync(userId);
+            if (user == null)
+                return Unauthorized("User not found.");
+
+            user.IdGroup = null;
+            user.Role = Role.User_Member;
+
+            var userOk = await _repo.UpdateMemberAsync(user);
+            if (!userOk)
+                return StatusCode(500, "Failed to update user.");
+
+            var groupOk = await _repo.DeleteGroupAsync(group);
+            if (!groupOk)
+                return StatusCode(500, "Failed to delete group.");
+
+            return Ok(new { message = "Group deleted", token = GenerateJwtToken(user) });
         }
     }
 }

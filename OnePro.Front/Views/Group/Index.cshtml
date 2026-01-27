@@ -7,34 +7,48 @@
 
     var currentRole = Context.Session.GetString("UserRole") ?? "";
     var isPic = IsPicRole(currentRole);
+    var isUserPic = string.Equals(currentRole, "User_Pic", StringComparison.Ordinal);
     var roleOptions = GetRoleOptions(currentRole);
+    var canDeleteGroup = isUserPic && Model.Members.Count <= 1;
 }
 
 <div class="max-w-6xl mx-auto mt-4 bg-white border border-gray-200 shadow-xl rounded-2xl p-6">
 
     <!-- Header -->
-    <div class="flex justify-between items-center mb-5">
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
         <h2 class="text-2xl font-semibold text-gray-800">
             @Model.NamaDivisi
             <span class="text-gray-500">- @Model.NamaPerusahaan</span>
         </h2>
+        @if (isPic)
+        {
+            <form asp-action="UpdateGroup" method="post" class="flex flex-wrap items-center gap-2">
+                @Html.AntiForgeryToken()
+                <input name="NamaDivisi"
+                       value="@Model.NamaDivisi"
+                       class="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                       placeholder="Nama Divisi" required />
+                <input name="NamaPerusahaan"
+                       value="@Model.NamaPerusahaan"
+                       class="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                       placeholder="Nama Perusahaan" required />
+                <button type="submit"
+                        class="inline-flex items-center justify-center rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-900 transition">
+                    Save
+                </button>
+            </form>
+        }
     </div>
 
     @if (isPic)
     {
         <div class="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <form asp-action="Invite" method="post" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <form asp-action="Invite" method="post" class="grid grid-cols-1 md:grid-cols-4 gap-3">
                 @Html.AntiForgeryToken()
-                <input name="Name"
-                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                       placeholder="Nama" required />
                 <input name="Email"
                        type="email"
                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
                        placeholder="Email" required />
-                <input name="Position"
-                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                       placeholder="Posisi" />
                 <select name="Role"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
                     @foreach (var opt in roleOptions)
@@ -47,7 +61,20 @@
                     + Add Member
                 </button>
             </form>
-            <p class="mt-2 text-xs text-gray-500">Jika password tidak diisi, default akan digunakan.</p>
+            <p class="mt-2 text-xs text-gray-500">Email harus sudah terdaftar dan belum tergabung ke divisi lain.</p>
+        </div>
+    }
+
+    @if (canDeleteGroup)
+    {
+        <div class="mb-4 flex justify-end">
+            <form asp-action="DeleteGroup" method="post" onsubmit="return confirm('Yakin hapus divisi ini?')" class="inline">
+                @Html.AntiForgeryToken()
+                <button type="submit"
+                        class="inline-flex items-center justify-center rounded-lg bg-rose-100 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-200 transition">
+                    Delete Divisi
+                </button>
+            </form>
         </div>
     }
 
