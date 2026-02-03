@@ -12,56 +12,37 @@
     var canDeleteGroup = isUserPic && Model.Members.Count <= 1;
 }
 
-<div class="max-w-6xl mx-auto mt-4 bg-white border border-gray-200 shadow-xl rounded-2xl p-6">
+<div class="max-w-6xl mx-auto mt-6">
+    <div class="bg-white rounded-2xl border border-gray-200/80 p-6">
 
     <!-- Header -->
     <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
-        <h2 class="text-2xl font-semibold text-gray-800">
+        <h2 class="text-xl font-semibold text-gray-900 tracking-tight">
             @Model.NamaDivisi
             <span class="text-gray-500">- @Model.NamaPerusahaan</span>
         </h2>
         @if (isPic)
         {
-            <form asp-action="UpdateGroup" method="post" class="flex flex-wrap items-center gap-2">
-                @Html.AntiForgeryToken()
-                <input name="NamaDivisi"
-                       value="@Model.NamaDivisi"
-                       class="rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                       placeholder="Nama Divisi" required />
-                <input name="NamaPerusahaan"
-                       value="@Model.NamaPerusahaan"
-                       class="rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                       placeholder="Nama Perusahaan" required />
-                <button type="submit"
-                        class="inline-flex items-center justify-center rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-900 transition">
-                    Save
-                </button>
-            </form>
+            <button type="button"
+                    class="inline-flex items-center justify-center rounded-xl bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 transition"
+                    data-modal-open="editGroupModal">
+                Edit Divisi
+            </button>
         }
     </div>
 
     @if (isPic)
     {
-        <div class="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <form asp-action="Invite" method="post" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                @Html.AntiForgeryToken()
-                <input name="Email"
-                       type="email"
-                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                       placeholder="Email" required />
-                <select name="Role"
-                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                    @foreach (var opt in roleOptions)
-                    {
-                        <option value="@opt.Value">@opt.Label</option>
-                    }
-                </select>
-                <button type="submit"
-                        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">
-                    + Add Member
-                </button>
-            </form>
-            <p class="mt-2 text-xs text-gray-500">Email harus sudah terdaftar dan belum tergabung ke divisi lain.</p>
+        <div class="mb-6 rounded-2xl border border-gray-200/80 bg-white p-5 flex items-center justify-between gap-3">
+            <div>
+                <div class="text-sm font-medium text-gray-900">Invite Member</div>
+                <p class="text-xs text-gray-500 mt-1">Email harus sudah terdaftar dan belum tergabung ke divisi lain.</p>
+            </div>
+            <button type="button"
+                    class="inline-flex items-center justify-center rounded-xl bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 transition"
+                    data-modal-open="addMemberModal">
+                + Add Member
+            </button>
         </div>
     }
 
@@ -71,7 +52,7 @@
             <form asp-action="DeleteGroup" method="post" onsubmit="return confirm('Yakin hapus divisi ini?')" class="inline">
                 @Html.AntiForgeryToken()
                 <button type="submit"
-                        class="inline-flex items-center justify-center rounded-lg bg-rose-100 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-200 transition">
+                        class="inline-flex items-center justify-center rounded-xl bg-rose-100 px-4 py-2.5 text-sm font-medium text-rose-700 hover:bg-rose-200 transition">
                     Delete Divisi
                 </button>
             </form>
@@ -79,78 +60,225 @@
     }
 
     <!-- Table -->
-    <div class="overflow-x-auto">
-        <table class="min-w-full text-sm text-left text-gray-700 border border-gray-200 rounded-xl overflow-hidden">
-            <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
-                <tr>
-                    <th class="px-4 py-3">Name</th>
-                    <th class="px-4 py-3">Email</th>
-                    <th class="px-4 py-3">Role</th>
-                    <th class="px-4 py-3">Position</th>
-                    <th class="px-4 py-3 text-center w-56">Actions</th>
-                </tr>
-            </thead>
-
-            <tbody class="divide-y divide-gray-200">
-                @foreach (var m in Model.Members)
-                {
-                    var memberIsPic = IsPicRole(m.RoleName);
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-4 py-3 font-medium text-gray-900">@m.Name</td>
-                        <td class="px-4 py-3">@m.Email</td>
-
-                        <!-- Role Badge -->
-                        <td class="px-4 py-3">
-                            <span class="px-3 py-1 rounded-full text-xs font-medium
-                                @(m.Role <= 3
-                                    ? "bg-blue-100 text-blue-700"
-                                    : m.Role <= 7
-                                        ? "bg-amber-100 text-amber-700"
-                                        : m.Role <= 11
-                                            ? "bg-rose-100 text-rose-700"
-                                            : "bg-green-100 text-green-700")">
-                                @m.RoleName
-                            </span>
-                        </td>
-
-                        <td class="px-4 py-3">@m.Position</td>
-
-                        <!-- Actions -->
-                        <td class="px-4 py-3 text-center flex gap-2 justify-center">
-                            @if (isPic)
-                            {
-                                <form asp-action="UpdateRole" asp-route-id="@m.Id" method="post" class="inline-flex gap-2 items-center">
-                                    @Html.AntiForgeryToken()
-                                    <select name="role" class="rounded-lg border border-gray-200 px-2 py-1 text-xs">
-                                        @foreach (var opt in roleOptions)
-                                        {
-                                            <option value="@opt.Value" selected="@(opt.Value == m.Role ? "selected" : null)">@opt.Label</option>
-                                        }
-                                    </select>
-                                    <button type="submit"
-                                            class="px-3 py-1 text-xs rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium transition">
-                                        Save
-                                    </button>
-                                </form>
-
-                                @if (!memberIsPic)
-                                {
-                                    <form asp-action="Delete" asp-route-id="@m.Id" method="post" onsubmit="return confirm('Are you sure?')" class="inline">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit"
-                                                class="px-3 py-1 text-xs rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 font-medium transition">
-                                            Delete
-                                        </button>
-                                    </form>
-                                }
-                            }
-                        </td>
+    <div class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm text-left text-gray-700">
+                <thead class="bg-gray-50/60 text-gray-500 uppercase text-xs">
+                    <tr>
+                        <th class="px-6 py-4">Name</th>
+                        <th class="px-6 py-4">Email</th>
+                        <th class="px-6 py-4">Role</th>
+                        <th class="px-6 py-4">Position</th>
+                        <th class="px-6 py-4 text-center w-56">Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+
+                <tbody class="divide-y divide-gray-100">
+                    @foreach (var m in Model.Members)
+                    {
+                        var memberIsPic = IsPicRole(m.RoleName);
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 font-medium text-gray-900">@m.Name</td>
+                            <td class="px-6 py-4">@m.Email</td>
+
+                            <!-- Role Badge -->
+                            <td class="px-6 py-4">
+                                <span class="px-3 py-1 rounded-full text-xs font-medium
+                                    @(m.Role <= 3
+                                        ? "bg-blue-100 text-blue-700"
+                                        : m.Role <= 7
+                                            ? "bg-amber-100 text-amber-700"
+                                            : m.Role <= 11
+                                                ? "bg-rose-100 text-rose-700"
+                                                : "bg-green-100 text-green-700")">
+                                    @m.RoleName
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4">@m.Position</td>
+
+                            <!-- Actions -->
+                            @* <td class="px-6 py-4">
+                                <div class="flex gap-2 justify-center">
+                                    @if (isPic)
+                                    {
+                                        <form asp-action="UpdateRole" asp-route-id="@m.Id" method="post" class="inline-flex gap-2 items-center">
+                                            @Html.AntiForgeryToken()
+                                            <select name="role" class="rounded-lg border border-gray-200 px-2 py-1 text-xs">
+                                                @foreach (var opt in roleOptions)
+                                                {
+                                                    <option value="@opt.Value" selected="@(opt.Value == m.Role ? "selected" : null)">@opt.Label</option>
+                                                }
+                                            </select>
+                                            <button type="submit"
+                                                    class="px-3 py-1 text-xs rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium transition">
+                                                Save
+                                            </button>
+                                        </form>
+
+                                        @if (!memberIsPic)
+                                        {
+                                            <form asp-action="Delete" asp-route-id="@m.Id" method="post" onsubmit="return confirm('Are you sure?')" class="inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        class="px-3 py-1 text-xs rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 font-medium transition">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        }
+                                    }
+                                </div>
+                            </td> *@
+
+                            <td class="px-6 py-4">
+    @if (isPic)
+    {
+        <div class="flex items-center justify-center gap-2">
+            <!-- Edit (Pencil) -->
+            <button type="button"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition"
+                    title="Edit role"
+                    data-open-edit
+                    data-id="@m.Id"
+                    data-name="@m.Name"
+                    data-email="@m.Email"
+                    data-role="@m.Role">
+                <i class="ri-pencil-line text-lg"></i>
+            </button>
+
+            <!-- Delete (Trash) -->
+            @if (!memberIsPic)
+            {
+                <button type="button"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition"
+                        title="Delete member"
+                        data-open-delete
+                        data-id="@m.Id"
+                        data-name="@m.Name"
+                        data-email="@m.Email">
+                    <i class="ri-delete-bin-6-line text-lg"></i>
+                </button>
+            }
+            else
+            {
+                <!-- optional: placeholder biar rata -->
+                <span class="inline-flex h-9 w-9"></span>
+            }
+        </div>
+    }
+</td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
+@if (isPic)
+{
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40" data-modal-close="addMemberModal"></div>
+        <div class="relative mx-auto mt-24 w-full max-w-xl px-4">
+            <div class="bg-white rounded-2xl border border-gray-200/80 shadow-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="text-lg font-semibold text-gray-900">Add Member</div>
+                        <div class="text-sm text-gray-500">Masukkan email & pilih role.</div>
+                    </div>
+                    <button type="button"
+                            class="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50"
+                            data-modal-close="addMemberModal">
+                        <i class="ri-close-line text-xl text-gray-500"></i>
+                    </button>
+                </div>
+
+                <form asp-action="Invite" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @Html.AntiForgeryToken()
+                    <div class="md:col-span-2">
+                        <label class="text-xs text-gray-500">Email</label>
+                        <input name="Email"
+                               type="email"
+                               class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+                               placeholder="Email" required />
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-xs text-gray-500">Role</label>
+                        <select name="Role"
+                                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10">
+                            @foreach (var opt in roleOptions)
+                            {
+                                <option value="@opt.Value">@opt.Label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="md:col-span-2 flex items-center justify-end gap-2 pt-2">
+                        <button type="button"
+                                class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                                data-modal-close="addMemberModal">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="inline-flex items-center justify-center rounded-xl bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 transition">
+                            Add Member
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Group Modal -->
+    <div id="editGroupModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40" data-modal-close="editGroupModal"></div>
+        <div class="relative mx-auto mt-24 w-full max-w-xl px-4">
+            <div class="bg-white rounded-2xl border border-gray-200/80 shadow-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="text-lg font-semibold text-gray-900">Edit Divisi</div>
+                        <div class="text-sm text-gray-500">Ubah nama divisi & perusahaan.</div>
+                    </div>
+                    <button type="button"
+                            class="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50"
+                            data-modal-close="editGroupModal">
+                        <i class="ri-close-line text-xl text-gray-500"></i>
+                    </button>
+                </div>
+
+                <form asp-action="UpdateGroup" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @Html.AntiForgeryToken()
+                    <div class="md:col-span-2">
+                        <label class="text-xs text-gray-500">Nama Divisi</label>
+                        <input name="NamaDivisi"
+                               value="@Model.NamaDivisi"
+                               class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+                               placeholder="Nama Divisi" required />
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-xs text-gray-500">Nama Perusahaan</label>
+                        <input name="NamaPerusahaan"
+                               value="@Model.NamaPerusahaan"
+                               class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+                               placeholder="Nama Perusahaan" required />
+                    </div>
+                    <div class="md:col-span-2 flex items-center justify-end gap-2 pt-2">
+                        <button type="button"
+                                class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                                data-modal-close="editGroupModal">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="inline-flex items-center justify-center rounded-xl bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 transition">
+                            Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
 
 @functions {
     private static bool IsPicRole(string roleName)
@@ -207,4 +335,215 @@
 
         return new List<(int, string)>();
     }
+}
+
+@if (isPic)
+{
+    <!-- Edit Role Modal -->
+    <div id="editMemberModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40" data-close="editMemberModal"></div>
+
+        <div class="relative mx-auto mt-24 w-full max-w-lg px-4">
+            <div class="bg-white rounded-2xl border border-gray-200/80 shadow-xl">
+                <div class="p-5 flex items-start justify-between gap-3">
+                    <div>
+                        <div class="text-lg font-semibold text-gray-900">Edit Member</div>
+                        <div class="text-sm text-gray-500 mt-0.5">
+                            <span id="em_name" class="font-medium text-gray-800">-</span>
+                            <span class="text-gray-400">•</span>
+                            <span id="em_email">-</span>
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50"
+                            data-close="editMemberModal">
+                        <i class="ri-close-line text-xl text-gray-500"></i>
+                    </button>
+                </div>
+
+                <form asp-action="UpdateRole" method="post" class="px-5 pb-5 space-y-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="em_id" />
+
+                    <div>
+                        <label class="text-xs text-gray-500">Role</label>
+                        <select name="role" id="em_role"
+                                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10">
+                            @foreach (var opt in roleOptions)
+                            {
+                                <option value="@opt.Value">@opt.Label</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="button"
+                                class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                                data-close="editMemberModal">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="inline-flex items-center justify-center rounded-xl bg-amber-500/15 px-4 py-2.5 text-sm font-semibold text-amber-700 hover:bg-amber-500/25 transition">
+                            Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (isPic)
+{
+    <!-- Edit Role Modal -->
+    <div id="editMemberModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40" data-close="editMemberModal"></div>
+
+        <div class="relative mx-auto mt-24 w-full max-w-lg px-4">
+            <div class="bg-white rounded-2xl border border-gray-200/80 shadow-xl">
+                <div class="p-5 flex items-start justify-between gap-3">
+                    <div>
+                        <div class="text-lg font-semibold text-gray-900">Edit Member</div>
+                        <div class="text-sm text-gray-500 mt-0.5">
+                            <span id="em_name" class="font-medium text-gray-800">-</span>
+                            <span class="text-gray-400">•</span>
+                            <span id="em_email">-</span>
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50"
+                            data-close="editMemberModal">
+                        <i class="ri-close-line text-xl text-gray-500"></i>
+                    </button>
+                </div>
+
+                <form asp-action="UpdateRole" method="post" class="px-5 pb-5 space-y-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="em_id" />
+
+                    <div>
+                        <label class="text-xs text-gray-500">Role</label>
+                        <select name="role" id="em_role"
+                                class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10">
+                            @foreach (var opt in roleOptions)
+                            {
+                                <option value="@opt.Value">@opt.Label</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="button"
+                                class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                                data-close="editMemberModal">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="inline-flex items-center justify-center rounded-xl bg-amber-500/15 px-4 py-2.5 text-sm font-semibold text-amber-700 hover:bg-amber-500/25 transition">
+                            Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (isPic)
+{
+    <!-- Delete Member Modal -->
+    <div id="deleteMemberModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40" data-close="deleteMemberModal"></div>
+
+        <div class="relative mx-auto mt-24 w-full max-w-lg px-4">
+            <div class="bg-white rounded-2xl border border-gray-200/80 shadow-xl">
+                <div class="p-5 flex items-start justify-between gap-3">
+                    <div>
+                        <div class="text-lg font-semibold text-gray-900">Delete Member</div>
+                        <div class="text-sm text-gray-500 mt-0.5">
+                            Yakin mau hapus member ini?
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50"
+                            data-close="deleteMemberModal">
+                        <i class="ri-close-line text-xl text-gray-500"></i>
+                    </button>
+                </div>
+
+                <div class="px-5 pb-5">
+                    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4">
+                        <div class="text-sm font-semibold text-rose-800" id="dm_name">-</div>
+                        <div class="text-xs text-rose-700 mt-1" id="dm_email">-</div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-4">
+                        <button type="button"
+                                class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                                data-close="deleteMemberModal">
+                            Cancel
+                        </button>
+
+                        <form asp-action="Delete" method="post" class="inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" id="dm_id" />
+                            <button type="submit"
+                                    class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 transition">
+                                Yes, Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const open = (id) => $(id)?.classList.remove("hidden");
+  const close = (id) => $(id)?.classList.add("hidden");
+
+  // 1) Universal: open modal
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-modal-open],[data-open-edit],[data-open-delete]");
+    if (!t) return;
+
+    // a) old style: data-modal-open="id"
+    if (t.dataset.modalOpen) open(t.dataset.modalOpen);
+
+    // b) pencil: open edit member modal + fill data
+    if (t.dataset.openEdit !== undefined) {
+      $("em_id") && ($("em_id").value = t.dataset.id || "");
+      $("em_name") && ($("em_name").textContent = t.dataset.name || "-");
+      $("em_email") && ($("em_email").textContent = t.dataset.email || "-");
+      $("em_role") && ($("em_role").value = t.dataset.role || "");
+      open("editMemberModal");
+    }
+
+    // c) trash: open delete member modal + fill data
+    if (t.dataset.openDelete !== undefined) {
+      $("dm_id") && ($("dm_id").value = t.dataset.id || "");
+      $("dm_name") && ($("dm_name").textContent = t.dataset.name || "-");
+      $("dm_email") && ($("dm_email").textContent = t.dataset.email || "-");
+      open("deleteMemberModal");
+    }
+  });
+
+  // 2) Universal: close modal (support 2 attribute styles)
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-close],[data-modal-close]");
+    if (!t) return;
+
+    // new style: data-close="id"
+    if (t.dataset.close) close(t.dataset.close);
+
+    // old style: data-modal-close="id"
+    if (t.dataset.modalClose) close(t.dataset.modalClose);
+  });
+})();
+</script>
 }

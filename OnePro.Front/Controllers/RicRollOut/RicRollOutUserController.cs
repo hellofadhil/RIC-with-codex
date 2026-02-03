@@ -38,6 +38,31 @@ namespace OnePro.Front.Controllers.RicRollOut
             return View(ViewUserIndex, items);
         }
 
+        [RoleRequired(Role.User_Member, Role.User_Pic, Role.User_Manager, Role.User_VP)]
+        [HttpGet("RicRollOut/User/Files/{id:guid}/{kind}")]
+        public async Task<IActionResult> DownloadFiles(Guid id, string kind)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var detail = await RollOutService.GetDetailByIdAsync(id, token);
+            if (detail == null)
+                return NotFound();
+
+            var urls = kind?.ToLowerInvariant() switch
+            {
+                "compare" => detail.CompareWithAsIsHoldingProcessFiles,
+                "stk" => detail.StkAsIsToBeFiles,
+                _ => null
+            };
+
+            if (urls == null || urls.Count == 0)
+                return NotFound("No files.");
+
+            var zipName = $"RIC_RollOut_{id}_{kind}.zip";
+            return DownloadZipFromUrls(urls, zipName);
+        }
+
         [HttpGet("RicRollOut/User/Create")]
         public IActionResult Create()
         {

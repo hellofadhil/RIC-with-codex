@@ -47,10 +47,10 @@
     bool isRollDashboard = IsUnder("/ricrollout/dashboard") || IsUnder("/ricrollout/user") || IsUnder("/ricrollout/review") || IsExact("/ricrollout");
     bool isRollApproval = IsUnder("/ricrollout/approval");
 
-    bool isUser = IsUnder("/user");
+    bool isGroup = IsUnder("/group");
     bool isSettings = IsUnder("/settings");
 
-    bool isMakerRole = userRole is "0" or "1" or "2" or "3"; // user/pic roles (sesuai rule lo)
+    bool isMakerRole = userRole.StartsWith("User_", StringComparison.OrdinalIgnoreCase);
 }
 
 <!DOCTYPE html>
@@ -250,7 +250,7 @@ class="nav-item btn-reset @(isRicGroup ? "active" : "open-only")"
         </div>
 
         <div class="nav-section">Admin</div>
-        <a href="/User" class="nav-item @(isUser ? "active" : "")">
+        <a href="/Group" class="nav-item @(isGroup ? "active" : "")">
             <i class="ri-group-line"></i> Group
         </a>
 
@@ -334,6 +334,7 @@ class="nav-item btn-reset @(isRicGroup ? "active" : "open-only")"
         initDropdown("ric", document.querySelector(`[data-dd="ric"]`)?.dataset.default);
         initDropdown("roll", document.querySelector(`[data-dd="roll"]`)?.dataset.default);
     });
+
 </script>
 
 </body>

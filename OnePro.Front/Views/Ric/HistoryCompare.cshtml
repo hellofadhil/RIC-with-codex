@@ -1,0 +1,479 @@
+@using System.Text.Json
+@using System.Linq
+@using System.Collections.Generic
+@using OnePro.Front.Models
+@model OnePro.Front.Models.RicHistoryCompareViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "_LayoutDashboard";
+
+    var fileBase = ViewBag.FileBase as string ?? "/Ric/User/Files";
+}
+
+<div class="min-h-screen bg-slate-50">
+    <div class="max-w-7xl mx-auto px-2 sm:px-2 py-4">
+
+        <!-- Header (ngikut style RIC Detail) -->
+        <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+            <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div>
+                    <h1 class="text-base sm:text-lg font-semibold text-slate-900">History Compare</h1>
+                    <p class="mt-1 text-xs text-slate-500">Bandingkan perubahan RIC per versi.</p>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                        <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-mono">
+                            RIC ID: @Model.RicId
+                        </span>
+                        <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                            Version: v@(Model.Current.Version)
+                        </span>
+                    </div>
+                </div>
+
+                <a href="@Model.BackUrl"
+                   class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                    Back
+                </a>
+            </div>
+        </div>
+
+        @{
+            var fields = ParseEditedFields(Model.Current.EditedFields);
+
+            var afterMap = FlattenJson(Model.Current.Snapshot);
+            if (afterMap.Count == 0)
+            {
+                afterMap = FlattenJson(Model.Current.EditedFields);
+            }
+
+            // Section config tetap, cuma style yang kita samain
+            var sections = new[]
+            {
+                new { Key = "Judul", Label = "Judul Permintaan", Desc = "Judul singkat dan jelas.", Keys = new[] { "Judul", "JudulPermintaan" }, Prefixes = Array.Empty<string>() },
+                new { Key = "Hashtag", Label = "Hashtag", Desc = "Hashtag untuk mengelompokkan RIC.", Keys = new[] { "Hastag", "Hashtag", "Hashtags" }, Prefixes = new[] { "Hastag", "Hashtag", "Hashtags" } },
+                new { Key = "AsIs", Label = "As-is Process & RASCI", Desc = "Dokumen proses saat ini.", Keys = new[] { "AsIsProcessRasciFile" }, Prefixes = new[] { "AsIsProcessRasciFile" } },
+                new { Key = "Permasalahan", Label = "Permasalahan", Desc = "Masalah utama di proses saat ini.", Keys = new[] { "Permasalahan" }, Prefixes = Array.Empty<string>() },
+                new { Key = "DampakMasalah", Label = "Dampak Masalah", Desc = "Impact ke bisnis, waktu, cost, kualitas.", Keys = new[] { "DampakMasalah" }, Prefixes = Array.Empty<string>() },
+                new { Key = "FaktorPenyebab", Label = "Faktor Penyebab Masalah", Desc = "Akar masalah, bukan hanya gejala.", Keys = new[] { "FaktorPenyebabMasalah", "FaktorPenyebab" }, Prefixes = Array.Empty<string>() },
+                new { Key = "SolusiSaatIni", Label = "Solusi Saat Ini", Desc = "Workaround/solusi sementara.", Keys = new[] { "SolusiSaatIni" }, Prefixes = Array.Empty<string>() },
+                new { Key = "AlternatifSolusi", Label = "Alternatif Solusi", Desc = "Opsi solusi yang diusulkan.", Keys = new[] { "AlternatifSolusi" }, Prefixes = new[] { "AlternatifSolusi" } },
+                new { Key = "ToBe", Label = "To-Be Process / Business RASCI / KKI", Desc = "Dokumen proses target.", Keys = new[] { "ToBeProcessBusinessRasciKkiFile" }, Prefixes = new[] { "ToBeProcessBusinessRasciKkiFile" } },
+                new { Key = "Expected", Label = "Expected Completion Target", Desc = "Timeline/target penyelesaian.", Keys = new[] { "ExcpectedCompletionTargetFile" }, Prefixes = new[] { "ExcpectedCompletionTargetFile" } },
+                new { Key = "PotensiValueCreation", Label = "Potensi Value Creation", Desc = "Manfaat efisiensi/cost saving.", Keys = new[] { "PotensiValueCreation", "PotentialValue" }, Prefixes = Array.Empty<string>() },
+                new { Key = "HasilSetelahPerbaikan", Label = "Hasil Setelah Perbaikan", Desc = "Hasil setelah implementasi.", Keys = new[] { "HasilSetelahPerbaikan" }, Prefixes = Array.Empty<string>() }
+            };
+        }
+
+        <div class="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- MAIN -->
+            <div class="lg:col-span-8 space-y-4">
+                @foreach (var sec in sections)
+                {
+                    var afterVal = GetValue(afterMap, sec.Keys, sec.Prefixes);
+
+                    <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+                        <div class="px-6 py-4 border-b border-slate-100">
+                            <h2 class="text-sm font-semibold text-slate-800">@sec.Label</h2>
+                            <p class="mt-1 text-xs text-slate-500">@sec.Desc</p>
+                        </div>
+
+                        <div class="px-6 py-4">
+                            @{
+                                var safeVal = NormalizeText(SanitizeValue(sec.Key, afterVal));
+                                var lines = SplitLines(safeVal);
+                                var isList = IsListLike(lines);
+                            }
+
+                            @if (sec.Key == "Hashtag")
+                            {
+                                if (lines.Count > 0)
+                                {
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (var tag in lines)
+                                        {
+                                            <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 border border-indigo-100">
+                                                #@tag
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                        Belum ada hashtag.
+                                    </div>
+                                }
+                            }
+                            else if (sec.Key == "AsIs" || sec.Key == "ToBe" || sec.Key == "Expected")
+                            {
+                                var kind = sec.Key == "AsIs" ? "asis" : (sec.Key == "ToBe" ? "tobe" : "expected");
+                                var hasFile = !string.IsNullOrWhiteSpace(afterVal) && afterVal.Trim() != "-";
+
+                                if (!hasFile)
+                                {
+                                    <div class="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                        Tidak ada file.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <a href="@($"{fileBase}/{Model.RicId}/{kind}")"
+                                       class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                                        <i class="ri-download-2-line"></i>
+                                        Download files
+                                    </a>
+                                }
+                            }
+                            else if (safeVal == "[hidden]" || safeVal == "[file updated]")
+                            {
+                                <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 border border-slate-200">
+                                    @safeVal
+                                </span>
+                            }
+                            else if (isList)
+                            {
+                                <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+                                    <ul class="list-disc pl-5 space-y-1 leading-relaxed">
+                                        @foreach (var line in lines)
+                                        {
+                                            <li>@NormalizeListItem(line)</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 whitespace-pre-line break-words leading-relaxed">
+                                    @safeVal
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- SIDEBAR (ngikut style RIC Detail: card + header + body) -->
+            <aside class="lg:col-span-4 space-y-4 lg:sticky lg:top-6 h-fit">
+
+                <!-- Ringkasan -->
+                <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+                    <div class="px-6 py-4 border-b border-slate-100">
+                        <h2 class="text-sm font-semibold text-slate-800">Ringkasan</h2>
+                        <p class="mt-1 text-xs text-slate-500">Info versi yang sedang dilihat.</p>
+                    </div>
+                    <div class="px-6 py-4 space-y-3">
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div class="text-xs text-slate-500">RIC ID</div>
+                            <div class="mt-1 font-mono text-sm text-slate-800">@Model.RicId</div>
+                        </div>
+
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div class="text-xs text-slate-500">Version</div>
+                            <div class="mt-1 text-sm font-semibold text-slate-900">v@(Model.Current.Version)</div>
+                            <div class="mt-1 text-xs text-slate-500">@Model.Current.CreatedAt.ToString("dd MMM yyyy, HH:mm")</div>
+                        </div>
+
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div class="text-xs text-slate-500">Editor</div>
+                            <div class="mt-1 text-sm font-semibold text-slate-900">
+                                @(string.IsNullOrWhiteSpace(Model.Current.EditorName) ? "Unknown" : Model.Current.EditorName)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Perubahan -->
+                <div class="rounded-xl bg-white shadow-sm border border-slate-100">
+                    <div class="px-6 py-4 border-b border-slate-100">
+                        <h2 class="text-sm font-semibold text-slate-800">Perubahan di Versi @Model.Current.Version</h2>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Diedit oleh @(string.IsNullOrWhiteSpace(Model.Current.EditorName) ? "Unknown" : Model.Current.EditorName)
+                            pada @Model.Current.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                        </p>
+                    </div>
+
+                    <div class="px-6 py-4 space-y-3">
+                        @if (fields.Length > 0)
+                        {
+                            foreach (var f in fields)
+                            {
+                                var val = GetValue(afterMap, new[] { f }, new[] { f });
+                                var safeVal = NormalizeText(SanitizeValue(f, val));
+                                var lines = SplitLines(safeVal);
+                                var isList = IsListLike(lines);
+
+                                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                                    <div class="text-xs font-semibold text-slate-700">@f</div>
+
+                                    @if (safeVal == "[hidden]" || safeVal == "[file updated]")
+                                    {
+                                        <span class="mt-2 inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 border border-slate-200">
+                                            @safeVal
+                                        </span>
+                                    }
+                                    else if (isList)
+                                    {
+                                        <ul class="mt-2 list-disc pl-5 space-y-1 text-sm text-slate-700 leading-relaxed">
+                                            @foreach (var line in lines)
+                                            {
+                                                <li>@NormalizeListItem(line)</li>
+                                            }
+                                        </ul>
+                                    }
+                                    else
+                                    {
+                                        <div class="mt-2 text-sm text-slate-700 whitespace-pre-line break-words leading-relaxed">
+                                            @safeVal
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                Tidak ada perubahan terdeteksi.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </aside>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private static Dictionary<string, string> FlattenJson(string? json)
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(json))
+            return map;
+
+        try
+        {
+            if (TryGetJsonPayload(json, out var payload))
+            {
+                using var doc = JsonDocument.Parse(payload);
+                Walk(doc.RootElement, "", map);
+            }
+            else
+            {
+                using var doc = JsonDocument.Parse(json);
+                Walk(doc.RootElement, "", map);
+            }
+        }
+        catch
+        {
+            map["raw"] = json ?? "-";
+        }
+
+        return map;
+    }
+
+    private static void Walk(JsonElement el, string prefix, Dictionary<string, string> map)
+    {
+        switch (el.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (var prop in el.EnumerateObject())
+                {
+                    var key = string.IsNullOrEmpty(prefix) ? prop.Name : $"{prefix}.{prop.Name}";
+                    Walk(prop.Value, key, map);
+                }
+                break;
+            case JsonValueKind.Array:
+                var idx = 0;
+                foreach (var item in el.EnumerateArray())
+                {
+                    var key = $"{prefix}[{idx}]";
+                    Walk(item, key, map);
+                    idx++;
+                }
+                break;
+            default:
+                map[prefix] = el.ToString() ?? "-";
+                break;
+        }
+    }
+
+    private static bool TryGetJsonPayload(string json, out string payload)
+    {
+        payload = json;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind == JsonValueKind.String)
+            {
+                var inner = doc.RootElement.GetString();
+                if (!string.IsNullOrWhiteSpace(inner))
+                {
+                    payload = inner.Trim();
+                    return payload.StartsWith("{") || payload.StartsWith("[");
+                }
+            }
+        }
+        catch
+        {
+            payload = json;
+        }
+
+        payload = json.Trim();
+        return payload.StartsWith("{") || payload.StartsWith("[");
+    }
+
+    private static string[] ParseEditedFields(string? editedFields)
+    {
+        if (string.IsNullOrWhiteSpace(editedFields))
+            return Array.Empty<string>();
+
+        var raw = editedFields.Trim();
+        try
+        {
+            if (TryGetJsonPayload(raw, out var payload))
+            {
+                using var doc = JsonDocument.Parse(payload);
+                return doc.RootElement.ValueKind switch
+                {
+                    JsonValueKind.Array => doc.RootElement.EnumerateArray()
+                        .Select(x => x.ToString())
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(x => x.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray(),
+                    JsonValueKind.Object => doc.RootElement.EnumerateObject()
+                        .Select(p => p.Name)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(x => x.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray(),
+                    JsonValueKind.String => SplitFields(doc.RootElement.GetString()),
+                    _ => Array.Empty<string>()
+                };
+            }
+        }
+        catch
+        {
+        }
+
+        return SplitFields(raw);
+    }
+
+    private static string[] SplitFields(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Array.Empty<string>();
+
+        return value
+            .Split(new[] { ',', ';', '|', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string GetValue(Dictionary<string, string> map, string[] keys, string[] prefixes)
+    {
+        foreach (var key in keys)
+        {
+            if (map.TryGetValue(key, out var val) && !string.IsNullOrWhiteSpace(val))
+                return val;
+        }
+
+        if (prefixes.Length > 0)
+        {
+            var values = new List<string>();
+            foreach (var kvp in map)
+            {
+                foreach (var prefix in prefixes)
+                {
+                    if (kvp.Key.Equals(prefix, StringComparison.OrdinalIgnoreCase) ||
+                        kvp.Key.StartsWith(prefix + "[", StringComparison.OrdinalIgnoreCase) ||
+                        kvp.Key.StartsWith(prefix + ".", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!string.IsNullOrWhiteSpace(kvp.Value))
+                            values.Add(kvp.Value);
+                        break;
+                    }
+                }
+            }
+
+            if (values.Count > 0)
+                return string.Join("\n", values);
+        }
+
+        return "-";
+    }
+
+    private static List<string> SplitLines(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value == "-" || value == "[hidden]" || value == "[file updated]")
+            return new List<string>();
+
+        return value
+            .Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+    }
+
+    private static string NormalizeText(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return value;
+
+        if (value == "-" || value == "[hidden]" || value == "[file updated]")
+            return value;
+
+        var lines = value
+            .Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+        return lines.Count == 0 ? "-" : string.Join("\n", lines);
+    }
+
+    private static bool IsListLike(List<string> lines)
+    {
+        if (lines.Count < 2) return false;
+        return lines.All(l => l.StartsWith("-") || char.IsDigit(l[0]));
+    }
+
+    private static string NormalizeListItem(string value)
+    {
+        var v = value.Trim();
+        if (v.StartsWith("-")) return v.TrimStart('-').Trim();
+
+        var dotIndex = v.IndexOf('.');
+        if (dotIndex > 0 && v.Take(dotIndex).All(char.IsDigit))
+        {
+            return v[(dotIndex + 1)..].Trim();
+        }
+
+        return v;
+    }
+
+    private static string SanitizeValue(string key, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "-";
+
+        var v = value.Trim();
+        if (v.StartsWith("http", StringComparison.OrdinalIgnoreCase) ||
+            v.Contains("/uploads/", StringComparison.OrdinalIgnoreCase) ||
+            v.Contains("\\uploads\\", StringComparison.OrdinalIgnoreCase))
+        {
+            return "[hidden]";
+        }
+
+        if (key.Contains("File", StringComparison.OrdinalIgnoreCase) ||
+            key.Contains("Files", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.IsNullOrWhiteSpace(v) ? "-" : "[file updated]";
+        }
+
+        return v;
+    }
+}

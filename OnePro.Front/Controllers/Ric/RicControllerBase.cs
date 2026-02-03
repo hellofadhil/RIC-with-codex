@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text.RegularExpressions;
 using Core.Models.Enums;
 using Microsoft.AspNetCore.Hosting;
@@ -85,6 +86,84 @@ namespace OnePro.Front.Controllers.Ric
             t = Regex.Replace(t, @"[^a-z0-9_\-]", "");
 
             return t;
+        }
+
+        protected IActionResult DownloadZipFromUrls(List<string>? urls, string zipFileName)
+        {
+            var list = (urls ?? new List<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (list.Count == 0)
+                return NotFound("No files.");
+
+            using var ms = new MemoryStream();
+            using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var url in list)
+                {
+                    var fullPath = TryMapUrlToPath(url);
+                    if (string.IsNullOrWhiteSpace(fullPath) || !System.IO.File.Exists(fullPath))
+                        continue;
+
+                    var entryName = Path.GetFileName(fullPath);
+                    entryName = EnsureUniqueName(entryName, usedNames);
+
+                    var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+                    using var entryStream = entry.Open();
+                    using var fs = System.IO.File.OpenRead(fullPath);
+                    fs.CopyTo(entryStream);
+                }
+            }
+
+            ms.Position = 0;
+            return File(ms.ToArray(), "application/zip", zipFileName);
+        }
+
+        private string? TryMapUrlToPath(string url)
+        {
+            try
+            {
+                var relative = (url ?? "")
+                    .Trim()
+                    .TrimStart('~')
+                    .TrimStart('/')
+                    .Replace('/', Path.DirectorySeparatorChar);
+
+                var fullPath = Path.GetFullPath(Path.Combine(Env.WebRootPath, relative));
+                var webRootFull = Path.GetFullPath(Env.WebRootPath);
+
+                if (!fullPath.StartsWith(webRootFull, StringComparison.OrdinalIgnoreCase))
+                    return null;
+
+                return fullPath;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string EnsureUniqueName(string name, HashSet<string> used)
+        {
+            if (used.Add(name))
+                return name;
+
+            var baseName = Path.GetFileNameWithoutExtension(name);
+            var ext = Path.GetExtension(name);
+            var i = 2;
+            string candidate;
+
+            do
+            {
+                candidate = $"{baseName} ({i}){ext}";
+                i++;
+            } while (!used.Add(candidate));
+
+            return candidate;
         }
     }
 }

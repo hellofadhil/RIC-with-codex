@@ -62,6 +62,44 @@ namespace OnePro.Front.Controllers.RicRollOut
             Role.ECS_Manager,
             Role.ECS_VP
         )]
+        [HttpGet("RicRollOut/Review/Files/{id:guid}/{kind}")]
+        public async Task<IActionResult> DownloadFiles(Guid id, string kind)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var detail = await RollOutService.GetDetailByIdAsync(id, token);
+            if (detail == null)
+                return NotFound();
+
+            var urls = kind?.ToLowerInvariant() switch
+            {
+                "compare" => detail.CompareWithAsIsHoldingProcessFiles,
+                "stk" => detail.StkAsIsToBeFiles,
+                _ => null
+            };
+
+            if (urls == null || urls.Count == 0)
+                return NotFound("No files.");
+
+            var zipName = $"RIC_RollOut_{id}_{kind}.zip";
+            return DownloadZipFromUrls(urls, zipName);
+        }
+
+        [RoleRequired(
+            Role.BR_Pic,
+            Role.BR_Member,
+            Role.BR_Manager,
+            Role.BR_VP,
+            Role.SARM_Pic,
+            Role.SARM_Member,
+            Role.SARM_Manager,
+            Role.SARM_VP,
+            Role.ECS_Pic,
+            Role.ECS_Member,
+            Role.ECS_Manager,
+            Role.ECS_VP
+        )]
         [HttpGet("RicRollOut/Review/{id:guid}")]
         public async Task<IActionResult> ReviewEdit(Guid id)
         {

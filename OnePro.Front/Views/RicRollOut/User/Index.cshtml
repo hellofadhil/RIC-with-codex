@@ -1,4 +1,5 @@
 @using Core.RequestModels.RicRollOut
+@using OnePro.Front.Helpers
 @model List<RicRollOutListItemResponse>
 
 @{
@@ -289,17 +290,6 @@ private static class S
         => $"w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 {extraHover} transition";
 
 private string GetStatusBadgeClass(string status)
-{
-    return status switch
-    {
-        S.Draft               => "bg-gray-100 text-gray-700 border border-gray-200",
-        S.SubmittedToBR       => "bg-blue-100 text-blue-700 border border-blue-200",
-        S.ReviewBR            => "bg-indigo-100 text-indigo-700 border border-indigo-200",
-        S.RejectedByBR        => "bg-red-100 text-red-700 border border-red-200",
-        S.SubmittedToBRManager=> "bg-amber-100 text-amber-700 border border-amber-200",
-        S.ApprovedByBRManager => "bg-green-100 text-green-700 border border-green-200",
-        _                     => "bg-gray-100 text-gray-600 border border-gray-200"
-    };
-}
+    => StatusBadgeHelper.GetStatusBadgeClass(status);
 
 }

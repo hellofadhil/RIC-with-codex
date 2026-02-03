@@ -134,27 +134,23 @@
                             {
                                 <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                                     <p class="text-xs font-medium text-slate-700">File saat ini:</p>
-
-                                    <ul class="mt-2 list-disc pl-5 space-y-1 text-xs text-slate-600">
-                                        @{
-                                            var i = 0;
-                                            foreach (var url in Model.ExistingCompareWithAsIsHoldingProcessFileUrls)
-                                            {
-                                                <li class="flex items-center justify-between gap-3">
-                                                    <a href="@url" target="_blank" class="text-indigo-600 hover:underline">
-                                                        @System.IO.Path.GetFileName(url)
-                                                    </a>
-
-                                                    <!-- penting: kepost balik -->
-                                                    <input type="hidden"
-                                                           name="ExistingCompareWithAsIsHoldingProcessFileUrls[@i]"
-                                                           value="@url" />
-                                                </li>
-                                                i++;
-                                            }
+                                    <div class="mt-2">
+                                        <a href="@($"/RicRollOut/Review/Files/{Model.Id}/compare")"
+                                           class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition">
+                                            <i class="ri-download-2-line"></i>
+                                            Download all files (@Model.ExistingCompareWithAsIsHoldingProcessFileUrls.Count)
+                                        </a>
+                                    </div>
+                                    @{
+                                        var i = 0;
+                                        foreach (var url in Model.ExistingCompareWithAsIsHoldingProcessFileUrls)
+                                        {
+                                            <input type="hidden"
+                                                   name="ExistingCompareWithAsIsHoldingProcessFileUrls[@i]"
+                                                   value="@url" />
+                                            i++;
                                         }
-                                    </ul>
-
+                                    }
                                     <p class="mt-2 text-[11px] text-slate-500">
                                         Kosongkan input file di bawah kalau tidak ingin mengganti.
                                     </p>
@@ -192,27 +188,23 @@
                             {
                                 <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                                     <p class="text-xs font-medium text-slate-700">File saat ini:</p>
-
-                                    <ul class="mt-2 list-disc pl-5 space-y-1 text-xs text-slate-600">
-                                        @{
-                                            var i = 0;
-                                            foreach (var url in Model.ExistingStkAsIsToBeFileUrls)
-                                            {
-                                                <li class="flex items-center justify-between gap-3">
-                                                    <a href="@url" target="_blank" class="text-indigo-600 hover:underline">
-                                                        @System.IO.Path.GetFileName(url)
-                                                    </a>
-
-                                                    <!-- penting: kepost balik -->
-                                                    <input type="hidden"
-                                                           name="ExistingStkAsIsToBeFileUrls[@i]"
-                                                           value="@url" />
-                                                </li>
-                                                i++;
-                                            }
+                                    <div class="mt-2">
+                                        <a href="@($"/RicRollOut/Review/Files/{Model.Id}/stk")"
+                                           class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition">
+                                            <i class="ri-download-2-line"></i>
+                                            Download all files (@Model.ExistingStkAsIsToBeFileUrls.Count)
+                                        </a>
+                                    </div>
+                                    @{
+                                        var i = 0;
+                                        foreach (var url in Model.ExistingStkAsIsToBeFileUrls)
+                                        {
+                                            <input type="hidden"
+                                                   name="ExistingStkAsIsToBeFileUrls[@i]"
+                                                   value="@url" />
+                                            i++;
                                         }
-                                    </ul>
-
+                                    }
                                     <p class="mt-2 text-[11px] text-slate-500">
                                         Kosongkan input file di bawah kalau tidak ingin mengganti.
                                     </p>

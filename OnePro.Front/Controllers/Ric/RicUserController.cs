@@ -15,9 +15,11 @@ namespace OnePro.Front.Controllers.Ric
         private const string ViewUserCreate = "~/Views/Ric/User/Create.cshtml";
         private const string ViewUserEdit = "~/Views/Ric/User/Edit.cshtml";
         private const string ViewUserUpdate = "~/Views/Ric/User/Update.cshtml";
+        private const string ViewUserDetail = "~/Views/Ric/Detail.cshtml";
 
         private const string ViewUserApprovalIndex = "~/Views/Ric/Approval/Index.cshtml";
         private const string ViewUserApprovalDetail = "~/Views/Ric/Approval/Detail.cshtml";
+        private const string ViewHistoryCompare = "~/Views/Ric/HistoryCompare.cshtml";
 
         public RicUserController(
             IRicService ricService,
@@ -44,6 +46,70 @@ namespace OnePro.Front.Controllers.Ric
 
             rics = rics.Take(10).ToList();
             return View(ViewUserIndex, rics);
+        }
+
+        [RoleRequired(Role.User_Member, Role.User_Pic, Role.User_Manager, Role.User_VP)]
+        [HttpGet("Ric/User/Details/{id:guid}")]
+        public async Task<IActionResult> Details(Guid id)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var ric = await RicService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            var vm = RicMapper.MapToEditViewModel(ric);
+            ViewBag.BackUrl = Url.Action(nameof(UserIndex)) ?? "/Ric/User";
+            ViewBag.BackLabel = "Back to My RIC";
+            ViewBag.Status = ((StatusRic)ric.Status).ToString();
+            ViewBag.FileBase = "/Ric/User/Files";
+            ViewBag.HistoryBase = "/Ric/User/History";
+
+            return View(ViewUserDetail, vm);
+        }
+
+        [RoleRequired(
+            Role.User_Member,
+            Role.User_Pic,
+            Role.User_Manager,
+            Role.User_VP,
+            Role.BR_Pic,
+            Role.BR_Member,
+            Role.BR_Manager,
+            Role.BR_VP,
+            Role.SARM_Pic,
+            Role.SARM_Member,
+            Role.SARM_Manager,
+            Role.SARM_VP,
+            Role.ECS_Pic,
+            Role.ECS_Member,
+            Role.ECS_Manager,
+            Role.ECS_VP
+        )]
+        [HttpGet("Ric/User/Files/{id:guid}/{kind}")]
+        public async Task<IActionResult> DownloadFiles(Guid id, string kind)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var ric = await RicService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            var urls = kind?.ToLowerInvariant() switch
+            {
+                "asis" => ric.AsIsProcessRasciFile,
+                "tobe" => ric.ToBeProcessBusinessRasciKkiFile,
+                "expected" => ric.ExcpectedCompletionTargetFile,
+                _ => null
+            };
+
+            if (urls == null || urls.Count == 0)
+                return NotFound("No files.");
+
+            var zipName = $"RIC_{id}_{kind}.zip";
+            return DownloadZipFromUrls(urls, zipName);
         }
 
         [HttpGet("Ric/User/Create")]
@@ -305,8 +371,83 @@ namespace OnePro.Front.Controllers.Ric
                 return NotFound();
 
             var vm = RicMapper.MapToEditViewModel(ric);
+            ViewBag.HistoryBase = "/Ric/Approval/History";
 
             return View(ViewUserApprovalDetail, vm);
+        }
+
+        [RoleRequired(Role.User_Member, Role.User_Pic, Role.User_Manager, Role.User_VP)]
+        [HttpGet("Ric/User/History/{id:guid}/{historyId:guid}")]
+        public async Task<IActionResult> HistoryCompare(Guid id, Guid historyId)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var ric = await RicService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            var histories = ric.Histories ?? new List<RicHistoryResponse>();
+            var current = histories.FirstOrDefault(h => h.Id == historyId);
+            if (current == null)
+                return NotFound();
+
+            var ordered = histories.OrderBy(h => h.Version).ToList();
+            var idx = ordered.FindIndex(h => h.Id == historyId);
+            var prev = idx > 0 ? ordered[idx - 1] : null;
+
+            var vm = new RicHistoryCompareViewModel
+            {
+                RicId = ric.Id,
+                Current = current,
+                Previous = prev,
+                Title = "RIC History Compare",
+                BackUrl = Url.Action(nameof(UserIndex)) ?? "/Ric/User"
+            };
+
+            ViewBag.FileBase = "/Ric/User/Files";
+            return View(ViewHistoryCompare, vm);
+        }
+
+        [RoleRequired(
+            Role.User_Manager,
+            Role.User_VP,
+            Role.BR_Manager,
+            Role.SARM_Manager,
+            Role.SARM_VP,
+            Role.ECS_Manager,
+            Role.ECS_VP
+        )]
+        [HttpGet("Ric/Approval/History/{id:guid}/{historyId:guid}")]
+        public async Task<IActionResult> ApprovalHistoryCompare(Guid id, Guid historyId)
+        {
+            if (!TryGetToken(out var token))
+                return RedirectToLogin();
+
+            var ric = await RicService.GetRicByIdAsync(id, token);
+            if (ric == null)
+                return NotFound();
+
+            var histories = ric.Histories ?? new List<RicHistoryResponse>();
+            var current = histories.FirstOrDefault(h => h.Id == historyId);
+            if (current == null)
+                return NotFound();
+
+            var ordered = histories.OrderBy(h => h.Version).ToList();
+            var idx = ordered.FindIndex(h => h.Id == historyId);
+            var prev = idx > 0 ? ordered[idx - 1] : null;
+
+            var vm = new RicHistoryCompareViewModel
+            {
+                RicId = ric.Id,
+                Current = current,
+                Previous = prev,
+                Title = "RIC History Compare",
+                BackUrl = Url.Action(nameof(ApprovalIndex)) ?? "/Ric/Approval"
+            };
+
+            ViewBag.FileBase = "/Ric/User/Files";
+            return View(ViewHistoryCompare, vm);
         }
 
         [RoleRequired(

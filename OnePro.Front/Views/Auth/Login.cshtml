@@ -1,65 +1,50 @@
 @{
     ViewData["Title"] = "Login";
-    // Assets (sesuai yang kamu kasih)
     var bgSvg = "https://login.idaman.pertamina.com/assets/images/background.svg";
     var logoPng = "https://login.idaman.pertamina.com/common/images/logo.png";
 }
 
 <div class="min-h-screen relative overflow-hidden"
-     style="background: linear-gradient(180deg, #f6f7ff 0%, #eef0ff 100%);">
+     style="background: radial-gradient(1200px 600px at 10% -10%, #e7ecff 0%, transparent 60%), radial-gradient(1000px 500px at 100% 0%, #e8fff7 0%, transparent 55%), linear-gradient(180deg, #f7f8ff 0%, #eef2ff 100%);">
 
-    <!-- Background SVG (halus, kayak contoh) -->
-    @* <div class="pointer-events-none absolute inset-0 opacity-70"
-         style="background-image:url('@bgSvg'); background-repeat:no-repeat; background-size:cover; background-position:center;">
-    </div> *@
-
-    <!-- Page container -->
     <div class="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
-        <!-- Main card -->
-        <div class="w-full max-w-5xl bg-white/90 backdrop-blur rounded-3xl shadow-2xl overflow-hidden">
+        <div class="w-full max-w-5xl bg-white/90 backdrop-blur rounded-3xl shadow-2xl ring-1 ring-slate-200/60 overflow-hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2">
                 <!-- LEFT: Form -->
                 <div class="p-8 sm:p-10 lg:p-12">
                     <div class="flex items-center gap-3 mb-8">
                         <img src="@logoPng" alt="Pertamina" class="h-8 sm:h-9 w-auto" />
-                        @* <span class="text-sm text-slate-400 hidden sm:inline">|</span>
-                        <span class="text-sm text-slate-500 hidden sm:inline">IdAMan - Portal</span> *@
+                        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">RIC Portal</span>
                     </div>
 
                     <div class="mb-8">
-                        <h1 class="text-xl sm:text-2xl font-semibold text-slate-800">
-                            Welcome to RIC - Portal,
+                        <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
+                            Welcome back
                         </h1>
                         <p class="text-slate-500 mt-1">
-                            Please login to your account
+                            Login to continue and manage your requests
                         </p>
                     </div>
 
                     <form asp-controller="Auth" asp-action="Login" method="post" class="space-y-5">
                         @Html.AntiForgeryToken()
 
-                        <!-- Email -->
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Email</label>
                             <input name="email" type="email" placeholder="you@example.com"
                                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 placeholder-slate-400
-                                          focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400"
+                                          focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition"
                                    required />
                         </div>
 
-                        <!-- Password (kalau kamu memang masih butuh) -->
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Password</label>
-                            <input name="password" type="password" placeholder="••••••••"
+                            <input name="password" type="password" placeholder="********"
                                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 placeholder-slate-400
-                                          focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400"
+                                          focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition"
                                    required />
                         </div>
 
-                        <!-- Captcha block (UI aja, tinggal kamu sambungin ke backend kamu) -->
-                        
-
-                        <!-- Remember + Next -->
                         <div class="flex items-center justify-between pt-1">
                             <label class="inline-flex items-center gap-3 select-none">
                                 <input type="checkbox" name="rememberMe"
@@ -83,15 +68,12 @@
 
                 <!-- RIGHT: Illustration panel -->
                 <div class="relative hidden lg:block">
-                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-white"></div>
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-emerald-50"></div>
 
-                    <!-- Ilustrasi (pakai background.svg biar mirip banget) -->
                     <div class="relative h-full w-full">
                         <div class="absolute inset-0"
                              style="background-image:url('@bgSvg'); background-repeat:no-repeat; background-size:cover; background-position:center;">
                         </div>
-
-                        <!-- Soft overlay biar teks/form tetep “clean” feel -->
                         <div class="absolute inset-0 bg-white/30"></div>
                     </div>
                 </div>
